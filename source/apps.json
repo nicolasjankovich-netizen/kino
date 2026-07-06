@@ -2,15 +2,17 @@
   "name": "Kino",
   "identifier": "com.nicolas.kino.source",
   "subtitle": "Privater Media-Player",
-  "apps": [{
-    "name": "Kino",
-    "bundleIdentifier": "com.nicolas.Kino",
-    "developerName": "Kinetik",
-    "version": "1.1",
-    "versionDate": "2026-07-06",
-    "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/releases/download/v1.1/Kino.ipa",
-    "localizedDescription": "Netflix-artiger Media-Player: 2 Profile, 4K-HDR, Offline-Downloads, Vorschlaege.",
-    "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-    "size": 1837113
-  }]
+  "apps": [
+    {
+      "name": "Kino",
+      "bundleIdentifier": "com.nicolas.Kino",
+      "developerName": "Kinetik",
+      "version": "1.2",
+      "versionDate": "2026-07-06",
+      "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/releases/download/v1.2/Kino.ipa",
+      "localizedDescription": "Media-Player im Apple-TV-Stil: 2 Profile, Key-Login, 4K-HDR, Offline- & Flug-Downloads, Vorschlaege.",
+      "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
+      "size": 1028203
+    }
+  ]
 }
