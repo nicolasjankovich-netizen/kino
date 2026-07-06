@@ -1,0 +1,10 @@
+build/
+build-*/
+*.xcodeproj/
+DerivedData/
+.DS_Store
+.env
+.env.*
+.secrets
+*.key
+*.pem
