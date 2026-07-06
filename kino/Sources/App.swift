@@ -7,35 +7,26 @@ let backendBase = "https://jarvis.tail215d9d.ts.net"
 // (nur /api/media/*, niemals Sysadmin) — aus dem Keychain gesetzt von Accounts.
 var kinoToken = ""
 
-// MARK: - Design (Kinekt-Familie: Deep-Black + Aurora + Liquid Glass)
-let cAccent = Color(red: 0.60, green: 0.35, blue: 1.00)   // Violett
-let cBlue   = Color(red: 0.32, green: 0.55, blue: 1.00)
-let cCyan   = Color(red: 0.35, green: 0.75, blue: 1.00)
-let cGood   = Color(red: 0.32, green: 0.86, blue: 0.62)
-let cWarn   = Color(red: 1.00, green: 0.72, blue: 0.32)
+// MARK: - Design (Apple-TV / JellyTV: tiefes Schwarz, Artwork trägt die Farbe, klare Typo)
+let cAccent = Color(red: 0.20, green: 0.52, blue: 1.00)   // klares Blau (Auswahl/Highlights)
+let cBlue   = Color(red: 0.30, green: 0.55, blue: 1.00)
+let cCyan   = Color(red: 0.40, green: 0.78, blue: 1.00)
+let cGood   = Color(red: 0.30, green: 0.85, blue: 0.55)
+let cWarn   = Color(red: 1.00, green: 0.70, blue: 0.30)
 
+/// Ruhiger, dunkler Hintergrund (kein animiertes Aurora mehr) — das Artwork liefert die Farbe.
 struct KinoBackground: View {
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.07)) { tl in
-            let t = tl.date.timeIntervalSinceReferenceDate * 0.35
-            Canvas { ctx, size in
-                ctx.addFilter(.blur(radius: 60)); ctx.blendMode = .plusLighter
-                let w = size.width, h = size.height
-                func blob(_ x: Double, _ y: Double, _ r: Double, _ c: Color) {
-                    ctx.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r*2, height: r*2)), with: .color(c.opacity(0.16)))
-                }
-                blob(w*(0.5+0.18*sin(t*0.6)), h*(0.18+0.05*cos(t*0.5)), w*0.55, cAccent)
-                blob(w*(0.28+0.12*cos(t*0.4)), h*(0.32+0.07*sin(t*0.7)), w*0.42, cBlue)
-                blob(w*(0.75+0.10*sin(t*0.5)), h*(0.28+0.06*cos(t*0.6)), w*0.40, cCyan)
-            }
-        }
-        .background(Color.black).ignoresSafeArea()
+        LinearGradient(colors: [Color(white: 0.055), .black],
+                       startPoint: .top, endPoint: .bottom)
+            .ignoresSafeArea()
     }
 }
 
 extension View {
-    func glass(_ r: CGFloat = 20) -> some View { self.padding(14).glassEffect(.regular, in: .rect(cornerRadius: r)) }
-    func label2() -> some View { self.font(.system(size: 12, weight: .light)).tracking(2).textCase(.lowercase).foregroundStyle(.white.opacity(0.5)) }
+    func glass(_ r: CGFloat = 20) -> some View { self.padding(14).background(.ultraThinMaterial, in: .rect(cornerRadius: r)) }
+    /// Abschnitts-Überschrift im Apple-TV-Stil: kräftig, normale Schreibweise.
+    func label2() -> some View { self.font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.65)) }
 }
 
 // MARK: - Modelle
@@ -142,6 +133,20 @@ final class Cinema: ObservableObject {
         }
     }
 
+    /// Flug-Download über den PC anfragen (komprimiert per NVENC). Profil bestimmt die Größe.
+    func prepareFlightDownload(_ item: KItem, profile: String) {
+        Task {
+            var body: [String: Any] = ["title": item.title, "kind": item.kind, "profile": profile]
+            if let y = item.year { body["year"] = y }
+            struct R: Decodable { let quality: String? }
+            if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/prepare-download", method: "POST", body: body)),
+               let r = try? JSONDecoder().decode(R.self, from: d) {
+                toast = "Flug-Download wird vorbereitet (\(r.quality ?? "")) — Info kommt per Telegram ✈️"
+            } else { toast = "Konnte Flug-Download nicht anfragen" }
+            try? await Task.sleep(nanoseconds: 4_000_000_000); toast = ""
+        }
+    }
+
     /// Sind wir im Heimnetz? (Jellyfin direkt per LAN-IP erreichbar → uncompressed/hohe Bitrate)
     func isLocal() async -> Bool {
         var r = URLRequest(url: URL(string: "http://192.168.178.82:8096/System/Info/Public")!)
@@ -192,8 +197,10 @@ struct KinoApp: App {
 struct RootView: View {
     @EnvironmentObject var acc: Accounts
     var body: some View {
-        if acc.current == nil {
-            LoginView()
+        if !acc.unlocked {
+            AccessView()
+        } else if acc.current == nil {
+            ProfileView()
         } else {
             TabView {
                 HomeView().tabItem { Label("Start", systemImage: "play.tv") }

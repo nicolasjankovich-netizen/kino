@@ -1,24 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
-      <stop offset="0%" stop-color="#1a1030"/>
-      <stop offset="100%" stop-color="#05040a"/>
-    </radialGradient>
-    <linearGradient id="play" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#9959ff"/>
-      <stop offset="55%" stop-color="#5289ff"/>
-      <stop offset="100%" stop-color="#59bfff"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#101318"/>
+      <stop offset="100%" stop-color="#04050a"/>
     </linearGradient>
-    <filter id="blur"><feGaussianBlur stdDeviation="70"/></filter>
-    <filter id="glow"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="play" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3d86ff"/>
+      <stop offset="100%" stop-color="#66c6ff"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="1024" height="1024" rx="0" fill="url(#bg)"/>
-  <g filter="url(#blur)" opacity="0.55">
-    <circle cx="360" cy="330" r="230" fill="#9959ff"/>
-    <circle cx="680" cy="420" r="200" fill="#5289ff"/>
-    <circle cx="540" cy="720" r="210" fill="#59bfff"/>
-  </g>
-  <g filter="url(#glow)">
-    <path d="M410 330 L720 512 L410 694 Z" fill="url(#play)"/>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="330" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="26"/>
+  <g filter="url(#soft)">
+    <path d="M425 355 L705 512 L425 669 Z" fill="url(#play)"/>
   </g>
 </svg>

@@ -25,12 +25,12 @@ struct DownloadsView: View {
                     VStack(alignment: .leading, spacing: 26) {
                         header
                         if !loadingUIDs.isEmpty {
-                            section("lädt gerade") {
+                            section("Lädt gerade") {
                                 ForEach(loadingUIDs, id: \.self) { uid in loadingRow(uid) }
                             }
                         }
                         if !doneUIDs.isEmpty {
-                            section("auf dem gerät · \(byteStr(totalBytes))") {
+                            section("Auf dem Gerät · \(byteStr(totalBytes))") {
                                 ForEach(doneUIDs, id: \.self) { uid in doneRow(uid) }
                             }
                         }
@@ -45,17 +45,17 @@ struct DownloadsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("downloads").font(.system(size: 30, weight: .thin)).tracking(5).foregroundStyle(.white)
-            Text("offline ansehen — ohne internet").label2()
+            Text("Downloads").font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
+            Text("Offline ansehen — ohne Internet").font(.system(size: 13, weight: .regular)).foregroundStyle(.white.opacity(0.55))
         }
     }
 
     private var empty: some View {
         VStack(spacing: 14) {
-            Image(systemName: "arrow.down.circle").font(.system(size: 44, weight: .thin)).foregroundStyle(cAccent.opacity(0.8))
-            Text("noch keine downloads").font(.system(size: 16, weight: .light)).foregroundStyle(.white)
-            Text("tippe bei einem film auf das ↓-symbol,\ndann kannst du ihn hier offline schauen")
-                .multilineTextAlignment(.center).label2()
+            Image(systemName: "arrow.down.circle").font(.system(size: 44, weight: .light)).foregroundStyle(cAccent.opacity(0.9))
+            Text("Noch keine Downloads").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
+            Text("Tippe bei einem Film auf das ↓-Symbol,\ndann kannst du ihn hier offline schauen.")
+                .font(.system(size: 13)).foregroundStyle(.white.opacity(0.55)).multilineTextAlignment(.center)
         }.padding(40)
     }
 
@@ -100,8 +100,8 @@ struct DownloadsView: View {
                 HStack(spacing: 8) {
                     Label(byteStr(dl.fileSize(uid)), systemImage: "internaldrive")
                         .font(.system(size: 12, weight: .light)).foregroundStyle(.white.opacity(0.6))
-                    Label("offline", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .light)).foregroundStyle(cGood)
+                    Label("Offline", systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(cGood)
                 }
             }
             Spacer()

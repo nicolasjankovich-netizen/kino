@@ -17,7 +17,7 @@ struct SuggestionsView: View {
                     header
                     picker
                     if c.suggestions.isEmpty {
-                        Text(c.busy ? "lädt vorschläge …" : "keine vorschläge")
+                        Text(c.busy ? "Lädt Vorschläge …" : "Keine Vorschläge")
                             .label2().frame(maxWidth: .infinity).padding(.top, 60)
                     } else {
                         LazyVGrid(columns: cols, spacing: 18) {
@@ -38,8 +38,8 @@ struct SuggestionsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("vorschläge").font(.system(size: 30, weight: .thin)).tracking(5).foregroundStyle(.white)
-            Text("beliebt & im trend — antippen zum anfragen").label2()
+            Text("Vorschläge").font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
+            Text("Beliebt & im Trend — antippen zum Anfragen").font(.system(size: 13, weight: .regular)).foregroundStyle(.white.opacity(0.55))
         }.padding(.horizontal, 18)
     }
 
@@ -50,8 +50,8 @@ struct SuggestionsView: View {
                     kind = k
                     Task { await c.loadSuggestions(k) }
                 } label: {
-                    Text(k.label.lowercased())
-                        .font(.system(size: 14, weight: kind == k ? .semibold : .light))
+                    Text(k.label)
+                        .font(.system(size: 14, weight: kind == k ? .semibold : .regular))
                         .foregroundStyle(kind == k ? .black : .white.opacity(0.7))
                         .padding(.horizontal, 18).padding(.vertical, 9)
                         .background(Capsule().fill(kind == k ? Color.white : .white.opacity(0.1)))
@@ -98,19 +98,19 @@ struct SuggestionsView: View {
                     Text(s.title).font(.system(size: 24, weight: .semibold)).foregroundStyle(.white)
                     HStack(spacing: 10) {
                         if let y = s.year { pill(String(y)) }
-                        pill(s.kind == "series" ? "serie" : "film")
+                        pill(s.kind == "series" ? "Serie" : "Film")
                     }
                     if let o = s.overview, !o.isEmpty {
-                        Text(o).font(.system(size: 14, weight: .light)).foregroundStyle(.white.opacity(0.75))
+                        Text(o).font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
                     }
                     Button { c.requestSuggestion(s) } label: {
-                        Label(req ? "angefragt" : "anfragen", systemImage: req ? "checkmark" : "plus")
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.black)
+                        Label(req ? "Angefragt" : "Anfragen", systemImage: req ? "checkmark" : "plus")
+                            .font(.system(size: 16, weight: .semibold)).foregroundStyle(.black)
                             .frame(maxWidth: .infinity).padding(.vertical, 13)
-                            .background(Capsule().fill(req ? cGood : Color.white))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(req ? cGood : Color.white))
                     }.buttonStyle(.plain).disabled(req)
-                    Text("angefragte titel werden automatisch heruntergeladen und erscheinen dann in der bibliothek.")
-                        .label2()
+                    Text("Angefragte Titel werden automatisch geladen und erscheinen dann in der Bibliothek.")
+                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.5))
                 }.padding(20)
             }
         }

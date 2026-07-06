@@ -31,14 +31,14 @@ struct PlayerView: View {
                         Image(systemName: "chevron.down").font(.system(size: 18, weight: .semibold)).foregroundStyle(.white).padding(14)
                     }; Spacer() }
                     Spacer()
-                    if loading { ProgressView().tint(.white).scaleEffect(1.3); Text(item.title).font(.system(size: 15, weight: .light)).foregroundStyle(.white).padding(.top, 8); Text("Stream wird vorbereitet …").label2() }
+                    if loading { ProgressView().tint(.white).scaleEffect(1.3); Text(item.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white).padding(.top, 8); Text("Wird geladen …").font(.system(size: 13)).foregroundStyle(.white.opacity(0.55)) }
                     if failed {
                         Image(systemName: "exclamationmark.triangle").font(.system(size: 30)).foregroundStyle(cWarn)
-                        Text("Konnte \(item.title) nicht abspielen").font(.system(size: 14, weight: .light)).foregroundStyle(.white)
-                        Text(errText ?? "Ist der Film in Jellyfin? Server erreichbar?")
-                            .font(.system(size: 11, weight: .light)).foregroundStyle(.white.opacity(0.6))
+                        Text("Konnte \(item.title) nicht abspielen").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                        Text(errText ?? "Ist der Film in der Bibliothek? Server erreichbar?")
+                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.6))
                             .multilineTextAlignment(.center).padding(.horizontal, 30)
-                        Button { Task { await start() } } label: { Text("erneut").foregroundStyle(.black).padding(.horizontal, 24).padding(.vertical, 10).background(Capsule().fill(cAccent)) }.padding(.top, 6)
+                        Button { Task { await start() } } label: { Text("Erneut versuchen").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white).padding(.horizontal, 24).padding(.vertical, 10).background(RoundedRectangle(cornerRadius: 12).fill(cAccent)) }.padding(.top, 6)
                     }
                     Spacer()
                 }

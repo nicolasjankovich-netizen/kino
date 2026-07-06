@@ -8,9 +8,9 @@ struct SearchView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("anfragen").font(.system(size: 26, weight: .thin)).tracking(4).foregroundStyle(.white)
+                Text("Anfragen").font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
                 Spacer()
-            }.padding(.horizontal, 18).padding(.top, 14)
+            }.padding(.horizontal, 20).padding(.top, 14)
 
             Picker("", selection: $c.kind) {
                 ForEach(Cinema.Kind.allCases, id: \.self) { Text($0.label).tag($0) }
@@ -29,7 +29,7 @@ struct SearchView: View {
                 VStack(spacing: 12) {
                     ForEach(c.results) { r in row(r) }
                     if c.results.isEmpty && !query.isEmpty && !c.busy {
-                        Text("nichts gefunden").label2().padding(.top, 30)
+                        Text("Nichts gefunden").label2().padding(.top, 30)
                     }
                 }.padding(.horizontal, 18).padding(.bottom, 12)
             }
@@ -58,13 +58,13 @@ struct SearchView: View {
             if r.added {
                 VStack(spacing: 2) {
                     Image(systemName: "checkmark.circle.fill").font(.system(size: 24)).foregroundStyle(cGood)
-                    Text("da").font(.system(size: 9, weight: .light)).foregroundStyle(cGood)
+                    Text("Dabei").font(.system(size: 9, weight: .medium)).foregroundStyle(cGood)
                 }
             } else {
                 Button { c.request(r) } label: {
                     VStack(spacing: 2) {
                         Image(systemName: "plus.circle.fill").font(.system(size: 26)).foregroundStyle(cAccent)
-                        Text("anfragen").font(.system(size: 9, weight: .light)).foregroundStyle(cAccent)
+                        Text("Anfragen").font(.system(size: 9, weight: .medium)).foregroundStyle(cAccent)
                     }
                 }.buttonStyle(.plain)
             }

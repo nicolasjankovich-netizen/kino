@@ -42,16 +42,16 @@ struct HomeView: View {
                 header
                 if !heroPicks.isEmpty { heroCarousel }
 
-                if !continueRow.isEmpty { row("weiterschauen", continueRow, showProgress: true) }
-                if !favRow.isEmpty { row("favoriten", favRow) }
-                if !c.movies.isEmpty { row("filme", Array(c.movies.prefix(40))) }
-                if !c.series.isEmpty { row("serien", Array(c.series.prefix(40))) }
+                if !continueRow.isEmpty { row("Weiter ansehen", continueRow, showProgress: true) }
+                if !favRow.isEmpty { row("Favoriten", favRow) }
+                if !c.movies.isEmpty { row("Filme", Array(c.movies.prefix(40))) }
+                if !c.series.isEmpty { row("Serien", Array(c.series.prefix(40))) }
                 ForEach(genreRows, id: \.name) { g in
-                    row(g.name.lowercased(), Array(g.items.prefix(30)))
+                    row(g.name, Array(g.items.prefix(30)))
                 }
 
                 if pool.isEmpty {
-                    Text(c.busy ? "lädt …" : "bibliothek leer").label2()
+                    Text(c.busy ? "Lädt …" : "Bibliothek leer").label2()
                         .frame(maxWidth: .infinity).padding(.top, 60)
                 }
             }
@@ -64,18 +64,17 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("kino").font(.system(size: 30, weight: .thin)).tracking(5).foregroundStyle(.white)
-                if let n = acc.current?.name { Text("hallo, \(n.lowercased())").label2() }
-            }
+        HStack(alignment: .center, spacing: 12) {
+            Text("Kino").font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
             Spacer()
             if c.busy { ProgressView().tint(.white) }
-            Button { acc.logout() } label: {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 16)).foregroundStyle(.white.opacity(0.55))
+            if let n = acc.current?.name {
+                Text(n).font(.system(size: 14, weight: .medium)).foregroundStyle(.white.opacity(0.7))
+            }
+            Button { acc.switchProfile() } label: {
+                Image(systemName: "person.crop.circle").font(.system(size: 23)).foregroundStyle(.white.opacity(0.85))
             }.buttonStyle(.plain)
-        }.padding(.horizontal, 18).padding(.top, 12)
+        }.padding(.horizontal, 20).padding(.top, 8)
     }
 
     /// Vollbreiter, rotierender Kino-Aufmacher (mehrere Titel, auto-wechselnd).
@@ -111,20 +110,19 @@ struct HomeView: View {
                 )
                 VStack(alignment: .leading, spacing: 10) {
                     Text(h.kind == "movie" ? "FILM" : "SERIE")
-                        .font(.system(size: 10, weight: .semibold)).tracking(2).foregroundStyle(cAccent)
-                    Text(h.title).font(.system(size: compact ? 24 : 30, weight: .bold)).foregroundStyle(.white)
-                        .lineLimit(2).shadow(radius: 10)
-                    HStack(spacing: 10) {
-                        Label("ansehen", systemImage: "play.fill")
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.black)
-                            .padding(.horizontal, 22).padding(.vertical, 11)
-                            .background(Capsule().fill(.white))
+                        .font(.system(size: 11, weight: .semibold)).tracking(1.5).foregroundStyle(.white.opacity(0.7))
+                    Text(h.title).font(.system(size: compact ? 26 : 34, weight: .bold)).foregroundStyle(.white)
+                        .lineLimit(2).shadow(radius: 12)
+                    HStack(spacing: 12) {
+                        Label("Abspielen", systemImage: "play.fill")
+                            .font(.system(size: 16, weight: .semibold)).foregroundStyle(.black)
+                            .padding(.horizontal, 26).padding(.vertical, 12)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(.white))
                         if let y = h.year {
-                            Text(String(y)).font(.system(size: 13, weight: .light)).foregroundStyle(.white.opacity(0.75))
+                            Text(String(y)).font(.system(size: 14, weight: .regular)).foregroundStyle(.white.opacity(0.8))
                         }
                         if h.hasFile == true {
-                            Label("verfügbar", systemImage: "checkmark.circle.fill")
-                                .font(.system(size: 12, weight: .light)).foregroundStyle(cGood)
+                            Image(systemName: "checkmark.circle.fill").font(.system(size: 15)).foregroundStyle(cGood)
                         }
                     }
                 }.padding(20).padding(.bottom, 22)
@@ -133,12 +131,12 @@ struct HomeView: View {
     }
 
     private func row(_ title: String, _ items: [KItem], showProgress: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).label2().padding(.horizontal, 18)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title).font(.system(size: 20, weight: .bold)).foregroundStyle(.white).padding(.horizontal, 20)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     ForEach(items) { it in tile(it, showProgress: showProgress) }
-                }.padding(.horizontal, 18)
+                }.padding(.horizontal, 20)
             }
         }
     }
@@ -197,14 +195,14 @@ struct DetailView: View {
                         Text(item.title).font(.system(size: 24, weight: .semibold)).foregroundStyle(.white)
                         HStack(spacing: 12) {
                             if let y = item.year { pill(String(y)) }
-                            pill(item.kind == "movie" ? "film" : "serie")
-                            if let g = item.size_gb, g > 0 { pill(String(format: "%.1f gb", g)) }
-                            if item.hasFile == true { Label("verfügbar", systemImage: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(cGood) }
+                            pill(item.kind == "movie" ? "Film" : "Serie")
+                            if let g = item.size_gb, g > 0 { pill(String(format: "%.1f GB", g)) }
+                            if item.hasFile == true { Label("Verfügbar", systemImage: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(cGood) }
                         }
 
                         HStack(spacing: 12) {
                             Button { start() } label: {
-                                Label(acc.progress(item.uid) > 0.02 ? "weiterschauen" : "ansehen", systemImage: "play.fill")
+                                Label(acc.progress(item.uid) > 0.02 ? "Weiterschauen" : "Abspielen", systemImage: "play.fill")
                                     .font(.system(size: 15, weight: .semibold)).foregroundStyle(.black)
                                     .frame(maxWidth: .infinity).padding(.vertical, 12)
                                     .background(Capsule().fill(item.hasFile == true ? Color.white : .white.opacity(0.35)))
@@ -231,8 +229,21 @@ struct DetailView: View {
                             }.buttonStyle(.plain).disabled(item.hasFile != true)
                         }
 
+                        if item.hasFile == true {
+                            Button { c.prepareFlightDownload(item, profile: acc.current?.id ?? "nico") } label: {
+                                Label("Für den Flug vorbereiten", systemImage: "airplane")
+                                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                    .background(RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.1)))
+                            }.buttonStyle(.plain)
+                            if !c.toast.isEmpty {
+                                Text(c.toast).font(.system(size: 12)).foregroundStyle(cCyan)
+                                    .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                            }
+                        }
+
                         if item.hasFile != true {
-                            Text("noch nicht in der bibliothek — über den anfragen-tab hinzufügen").label2()
+                            Text("Noch nicht in der Bibliothek — über den Anfragen-Tab hinzufügen.").font(.system(size: 13)).foregroundStyle(.white.opacity(0.55))
                         }
                     }.padding(.horizontal, 18)
                     Spacer(minLength: 20)
