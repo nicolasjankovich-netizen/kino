@@ -13,35 +13,35 @@ struct AccessView: View {
             KinoBackground()
             VStack(spacing: 22) {
                 Spacer()
-                Text("Kino").font(.system(size: 44, weight: .bold)).foregroundStyle(.white)
+                Text("Kino").font(.system(size: 44, weight: .bold)).foregroundStyle(cInk)
 
                 if !requested {
-                    Text("Zum Anmelden einen Zugang anfragen").font(.system(size: 14)).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
+                    Text("Zum Anmelden einen Zugang anfragen").font(.system(size: 14)).foregroundStyle(cInk2.opacity(0.6)).multilineTextAlignment(.center)
                     Button { Task { await request() } } label: {
                         HStack(spacing: 8) {
-                            if acc.busy { ProgressView().tint(.white) }
-                            Text("Zugang anfragen").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                            if acc.busy { ProgressView().tint(cInk) }
+                            Text("Zugang anfragen").font(.system(size: 16, weight: .semibold)).foregroundStyle(cInk)
                         }.frame(width: 250).padding(.vertical, 14).background(RoundedRectangle(cornerRadius: 14).fill(cAccent))
                     }.buttonStyle(.plain).disabled(acc.busy)
                     Button { requested = true } label: {
-                        Text("Ich habe schon einen Key").font(.system(size: 13)).foregroundStyle(.white.opacity(0.55))
+                        Text("Ich habe schon einen Key").font(.system(size: 13)).foregroundStyle(cInk2.opacity(0.55))
                     }.buttonStyle(.plain)
                 } else {
                     if let info { Text(info).font(.system(size: 13, weight: .light)).foregroundStyle(cCyan).multilineTextAlignment(.center).padding(.horizontal, 30) }
                     TextField("Login-Key", text: $keyInput)
-                        .textFieldStyle(.plain).multilineTextAlignment(.center).foregroundStyle(.white)
+                        .textFieldStyle(.plain).multilineTextAlignment(.center).foregroundStyle(cInk)
                         .font(.system(size: 22, weight: .light)).tracking(4).textInputAutocapitalization(.characters)
                         .autocorrectionDisabled().submitLabel(.go)
                         .frame(width: 250).padding(14).glass(24).offset(x: shake ? -8 : 0)
                         .onSubmit { Task { await verify() } }
                     Button { Task { await verify() } } label: {
                         HStack(spacing: 8) {
-                            if acc.busy { ProgressView().tint(.white) }
-                            Text("Freischalten").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                            if acc.busy { ProgressView().tint(cInk) }
+                            Text("Freischalten").font(.system(size: 16, weight: .semibold)).foregroundStyle(cInk)
                         }.frame(width: 250).padding(.vertical, 14).background(RoundedRectangle(cornerRadius: 14).fill(cAccent))
                     }.buttonStyle(.plain).disabled(acc.busy || keyInput.count < 4)
                     Button { requested = false; info = nil } label: {
-                        Text("Neuen Key anfragen").font(.system(size: 13)).foregroundStyle(.white.opacity(0.55))
+                        Text("Neuen Key anfragen").font(.system(size: 13)).foregroundStyle(cInk2.opacity(0.55))
                     }.buttonStyle(.plain)
                 }
                 Spacer(); Spacer()
@@ -72,15 +72,15 @@ struct ProfileView: View {
             KinoBackground()
             VStack(spacing: 30) {
                 Spacer()
-                Text("Wer schaut?").font(.system(size: 28, weight: .semibold)).foregroundStyle(.white)
+                Text("Wer schaut?").font(.system(size: 28, weight: .semibold)).foregroundStyle(cInk)
                 HStack(spacing: 30) {
                     ForEach(Accounts.all) { a in
                         Button { acc.selectProfile(a) } label: {
                             VStack(spacing: 10) {
                                 Circle().fill(a.tint.opacity(0.85)).frame(width: 96, height: 96)
-                                    .overlay(Text(String(a.name.prefix(1))).font(.system(size: 40, weight: .light)).foregroundStyle(.white))
+                                    .overlay(Text(String(a.name.prefix(1))).font(.system(size: 40, weight: .light)).foregroundStyle(cInk))
                                     .shadow(color: a.tint.opacity(0.6), radius: 14)
-                                Text(a.name).font(.system(size: 16, weight: .light)).foregroundStyle(.white.opacity(0.9))
+                                Text(a.name).font(.system(size: 16, weight: .light)).foregroundStyle(cInk2.opacity(0.9))
                             }
                         }.buttonStyle(.plain)
                     }

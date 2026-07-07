@@ -23,7 +23,7 @@ struct PlayerView: View {
                              onProgress: { acc.setProgress(item.uid, $0) })
                     .ignoresSafeArea()
             } else {
-                AsyncImage(url: URL(string: item.hero ?? "")) { img in
+                CachedImage(url: URL(string: item.hero ?? "")) { img in
                     img.resizable().aspectRatio(contentMode: .fit).opacity(0.35)
                 } placeholder: { Color.black }.ignoresSafeArea()
                 VStack(spacing: 14) {
@@ -50,9 +50,17 @@ struct PlayerView: View {
 
     private func start() async {
         loading = true; failed = false; errText = nil
-        // Audio auch im Stumm-Schalter-Modus
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        // Audio-Session AKTIV schalten: sonst steuern die Lautstärke-Tasten den Klingelton
+        // (kein Medien-HUD) und man hört nichts. `.playback` ignoriert auch den Stumm-Schalter.
+        let sess = AVAudioSession.sharedInstance()
+        do {
+            try sess.setCategory(.playback, mode: .moviePlayback, options: [])
+            try sess.setActive(true, options: [])
+        } catch {
+            // Fallback ohne Optionen
+            try? sess.setCategory(.playback)
+            try? sess.setActive(true)
+        }
         let url: URL
         if let local = dl.localURL(item.uid) {
             url = local                                   // offline abspielen (heruntergeladen)
@@ -65,6 +73,8 @@ struct PlayerView: View {
         }
         let p = AVPlayer(url: url)
         p.allowsExternalPlayback = true
+        p.isMuted = false
+        p.volume = 1.0
         player = p; loading = false
         p.play()
         // Status beobachten → echten Fehler anzeigen (Diagnose)

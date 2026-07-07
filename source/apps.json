@@ -7,12 +7,17 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "1.2",
-      "versionDate": "2026-07-06",
-      "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/releases/download/v1.2/Kino.ipa",
-      "localizedDescription": "Media-Player im Apple-TV-Stil: 2 Profile, Key-Login, 4K-HDR, Offline- & Flug-Downloads, Vorschlaege.",
+      "version": "1.3",
+      "versionDate": "2026-07-07",
+      "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/releases/download/v1.3/Kino.ipa",
+      "localizedDescription": "Privater Media-Player im Netflix-Stil fuer iPhone, iPad & Mac.\n\nNEU in 1.3:\n- Profil-Themes: klares Apple-TV-Design ODER ein pastelliges Brandy-Melville/Coquette-Theme (geschwungene Schrift, Streifen, Rose).\n- Hero-Banner zeigen den echten Titel-Schriftzug vom Cover (TMDB clearlogo, JellyTV-Style).\n- Bulletproof Offline-Downloads: 720p HEVC, Resume, Auto-Retry, ueberleben App-Neustart/Netzwechsel.\n- Auto-Prep: angefragte Filme werden automatisch fuer offline komprimiert.\n- Streaming in 1080p mit sauberem Stereo-Ton.\n\nLogin ist media-scoped (kein Server-Zugriff, kein Admin-Token in der App).",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1028203
+      "size": 917770,
+      "screenshotURLs": [
+        "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/screenshots/home.png",
+        "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/screenshots/library.png",
+        "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/screenshots/suggestions.png"
+      ]
     }
   ]
 }

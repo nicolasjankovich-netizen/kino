@@ -10,14 +10,11 @@ struct DiscoverView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Bibliothek").font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
+                    Text("Bibliothek").font(kTitle(30)).foregroundStyle(cInk)
                     Spacer()
-                    if c.busy { ProgressView().tint(.white) }
+                    if c.busy { ProgressView().tint(cInk) }
                 }
-                Picker("", selection: $c.kind) {
-                    ForEach(Cinema.Kind.allCases, id: \.self) { Text($0.label).tag($0) }
-                }.pickerStyle(.segmented)
-                .onChange(of: c.kind) { _, _ in Task { await c.loadLibrary() } }
+                KindSwitch(kind: $c.kind) { Task { await c.loadLibrary() } }
 
                 if c.library.isEmpty && !c.busy {
                     Text("Bibliothek lädt …").label2().frame(maxWidth: .infinity).padding(.top, 40)
@@ -42,12 +39,12 @@ struct DiscoverView: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 ZStack(alignment: .topTrailing) {
-                    AsyncImage(url: URL(string: it.poster ?? "")) { img in
+                    CachedImage(url: URL(string: it.poster ?? "")) { img in
                         img.resizable().aspectRatio(2/3, contentMode: .fill)
                     } placeholder: {
                         RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.08))
                             .aspectRatio(2/3, contentMode: .fit)
-                            .overlay(Image(systemName: "film").foregroundStyle(.white.opacity(0.25)))
+                            .overlay(Image(systemName: "film").foregroundStyle(cInk2.opacity(0.25)))
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     if it.hasFile == true {
@@ -55,8 +52,8 @@ struct DiscoverView: View {
                             .foregroundStyle(cGood).padding(6).shadow(radius: 3)
                     }
                 }
-                Text(it.title).font(.system(size: 13, weight: .medium)).foregroundStyle(.white).lineLimit(1)
-                if let y = it.year { Text(String(y)).font(.system(size: 11)).foregroundStyle(.white.opacity(0.5)) }
+                Text(it.title).font(.system(size: 13, weight: .medium)).foregroundStyle(cInk).lineLimit(1)
+                if let y = it.year { Text(String(y)).font(.system(size: 11)).foregroundStyle(cInk2.opacity(0.5)) }
             }
         }.buttonStyle(.plain)
     }

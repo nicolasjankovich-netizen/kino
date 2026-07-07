@@ -35,7 +35,7 @@ enum Keychain {
 final class Accounts: ObservableObject {
     static let all = [
         Account(id: "nico", name: "Nico", tint: cBlue),
-        Account(id: "ari",  name: "Ari",  tint: cAccent),
+        Account(id: "ari",  name: "Ari",  tint: cPink),
     ]
     @Published var unlocked = false        // Gerät hat gültiges Session-Token
     @Published var current: Account?       // gewähltes Profil
@@ -47,7 +47,18 @@ final class Accounts: ObservableObject {
         if let tok = Keychain.get("kino_token"), !tok.isEmpty {
             kinoToken = tok; unlocked = true
             current = Accounts.all.first { $0.id == lastAccount }
+            girlie = (current?.id == "ari")
         }
+        #if targetEnvironment(simulator)
+        // DEMO nur im Simulator: direkt als Ari rein, damit die girlie-Seite bestückt sichtbar ist.
+        // Token kommt aus der Launch-Umgebung (SIMCTL_CHILD_KINO_DEMO_TOKEN) — NICHT im Quellcode,
+        // damit das öffentliche Repo sauber bleibt. Im Geräte-Build wird der Block wegkompiliert.
+        if !unlocked, let demo = ProcessInfo.processInfo.environment["KINO_DEMO_TOKEN"], !demo.isEmpty {
+            kinoToken = demo; unlocked = true
+            current = Accounts.all.first { $0.id == "ari" }
+            girlie = true
+        }
+        #endif
     }
 
     /// Zugang anfragen → Server schickt Key per Telegram aufs iPhone des Besitzers.
@@ -79,10 +90,10 @@ final class Accounts: ObservableObject {
         return true
     }
 
-    func selectProfile(_ a: Account) { current = a; lastAccount = a.id }
-    func switchProfile() { current = nil }   // zurück zur Profilauswahl (Token bleibt)
+    func selectProfile(_ a: Account) { current = a; lastAccount = a.id; girlie = (a.id == "ari") }
+    func switchProfile() { current = nil; girlie = false }   // zurück zur Profilauswahl (Token bleibt)
     func logout() {
-        kinoToken = ""; Keychain.delete("kino_token"); unlocked = false; current = nil; lastAccount = ""
+        kinoToken = ""; Keychain.delete("kino_token"); unlocked = false; current = nil; lastAccount = ""; girlie = false
     }
 
     // ── getrennte Watch-States pro Profil ──

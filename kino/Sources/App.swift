@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Freundin-App „Kino" — eingeschränkte Media-App auf demselben Backend (nur Library/Suche/Anfrage).
 // Kontrakt: ~/jellyfin-stack/SHARED_API.md. KEINE Sysadmin-/Power-/Container-Funktionen.
@@ -7,26 +8,113 @@ let backendBase = "https://jarvis.tail215d9d.ts.net"
 // (nur /api/media/*, niemals Sysadmin) — aus dem Keychain gesetzt von Accounts.
 var kinoToken = ""
 
-// MARK: - Design (Apple-TV / JellyTV: tiefes Schwarz, Artwork trägt die Farbe, klare Typo)
-let cAccent = Color(red: 0.20, green: 0.52, blue: 1.00)   // klares Blau (Auswahl/Highlights)
-let cBlue   = Color(red: 0.30, green: 0.55, blue: 1.00)
-let cCyan   = Color(red: 0.40, green: 0.78, blue: 1.00)
-let cGood   = Color(red: 0.30, green: 0.85, blue: 0.55)
-let cWarn   = Color(red: 1.00, green: 0.70, blue: 0.30)
+// MARK: - Design / Theme
+// Zwei Looks im selben App-Binary, umgeschaltet PRO PROFIL (siehe Accounts):
+//  • Nico  → das bestehende Apple-TV/JellyTV-Design (tiefes Schwarz, klares Blau, klare Typo).
+//  • Ari   → „girlie": warmes Pink/Lavendel, weiche Glows, geschwungene Script-Titel (Snell Roundhand),
+//            abgerundete Body-Schrift (SF Rounded). Verspielt, aber Poster bleiben lesbar (dunkler Grund).
+// Der Schalter `girlie` wird beim Profilwechsel gesetzt; danach baut SwiftUI den Tab-Baum neu auf,
+// sodass alle abgeleiteten Farben/Schriften frisch gelesen werden.
+@MainActor var girlie = false
 
-/// Ruhiger, dunkler Hintergrund (kein animiertes Aurora mehr) — das Artwork liefert die Farbe.
+let cBlue = Color(red: 0.30, green: 0.55, blue: 1.00)     // Nico-Profil-Tint (konstant)
+let cPink = Color(red: 1.00, green: 0.58, blue: 0.79)     // Ari-Profil-Tint / Akzent (heller, pastellig)
+let cLav  = Color(red: 0.83, green: 0.68, blue: 1.00)     // helles Lavendel (girlie „cyan")
+
+// Akzente folgen dem aktiven Profil.
+@MainActor var cAccent: Color { girlie ? cPink : Color(red: 0.20, green: 0.52, blue: 1.00) }
+@MainActor var cCyan:   Color { girlie ? cLav  : Color(red: 0.40, green: 0.78, blue: 1.00) }
+let cGood = Color(red: 0.30, green: 0.85, blue: 0.55)     // „verfügbar/offline" (Semantik, beide)
+let cWarn = Color(red: 1.00, green: 0.70, blue: 0.30)     // Bewertung/Warnung (beide)
+
+// Text-Tinten folgen dem Profil: Nico = Weiß (dunkler Grund); Ari = Rosé auf CREME-Grund
+// (kräftig genug, dass die Schrift auf dem hellen Brandy-Hintergrund klar lesbar ist — kein Rosa-auf-Rosa).
+// `cInk` ersetzt frühere `.white`, `cInk2` die Basis früherer `.white.opacity(x)` → für Nico identisch.
+@MainActor var cInk:  Color { girlie ? Color(red: 0.94, green: 0.60, blue: 0.77) : .white }   // helles pastelliges Rosé
+@MainActor var cInk2: Color { girlie ? Color(red: 0.74, green: 0.55, blue: 0.64) : .white }   // weiches Mauve (noch lesbar)
+
+/// Sehr elegante, feine Script-Schrift für große Aufmacher (Ari) — „Savoye LET" rendert zart & groß.
+@MainActor func kScript(_ size: CGFloat) -> Font {
+    girlie ? .custom("SavoyeLetPlain", size: size * 1.9)
+           : .system(size: size, weight: .bold)
+}
+/// Geschwungene, gut lesbare Titel-Schrift für Abschnitte (Ari: Snell Roundhand), sonst kräftig-serifenlos.
+@MainActor func kTitle(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
+    girlie ? .custom("SnellRoundhand-Bold", size: size * 1.3)
+           : .system(size: size, weight: weight)
+}
+/// Body-/Label-Schrift: bei Ari abgerundet (SF Rounded), sonst Standard.
+@MainActor func kBody(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+    .system(size: size, weight: weight, design: girlie ? .rounded : .default)
+}
+
+/// Hintergrund folgt dem Profil: Nico = ruhiges Schwarz; Ari = Brandy-Melville — helle vertikale
+/// Candy-Stripes (Blush-Rosa / Creme) von oben nach unten, luftig-soft.
 struct KinoBackground: View {
+    /// Vertikale Streifen: gleich breite Rechtecke, abwechselnd Blush & Creme.
+    private var stripes: some View {
+        GeometryReader { geo in
+            let count = 26
+            let w = geo.size.width / CGFloat(count)
+            HStack(spacing: 0) {
+                ForEach(0..<count, id: \.self) { i in
+                    Rectangle()
+                        .fill(i % 2 == 0 ? Color(red: 0.995, green: 0.955, blue: 0.975)  // sehr helles Rosa
+                                         : Color(red: 1.0,   green: 0.99,  blue: 0.985)) // fast Weiß
+                        .frame(width: w)
+                }
+            }
+        }
+    }
     var body: some View {
-        LinearGradient(colors: [Color(white: 0.055), .black],
-                       startPoint: .top, endPoint: .bottom)
-            .ignoresSafeArea()
+        if girlie {
+            ZStack {
+                Color(red: 1.0, green: 0.99, blue: 0.985)          // heller Grundton
+                stripes
+                // ein Hauch Rosé am unteren Rand — sehr dezent
+                LinearGradient(colors: [Color.white.opacity(0.10), .clear,
+                                        Color(red: 0.99, green: 0.90, blue: 0.94).opacity(0.20)],
+                               startPoint: .top, endPoint: .bottom)
+            }.ignoresSafeArea()
+        } else {
+            LinearGradient(colors: [Color(white: 0.055), .black],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+        }
+    }
+}
+
+/// Filme/Serien-Umschalter: pinke Pillen für Ari (girlie), nativer Segmented-Picker für Nico.
+struct KindSwitch: View {
+    @Binding var kind: Cinema.Kind
+    var onChange: () -> Void
+    var body: some View {
+        if girlie {
+            HStack(spacing: 10) {
+                ForEach(Cinema.Kind.allCases, id: \.self) { k in
+                    Button { kind = k; onChange() } label: {
+                        Text(k.label)
+                            .font(.system(size: 14, weight: kind == k ? .semibold : .regular, design: .rounded))
+                            .foregroundStyle(kind == k ? AnyShapeStyle(Color.white) : AnyShapeStyle(cInk2.opacity(0.75)))
+                            .padding(.horizontal, 18).padding(.vertical, 8)
+                            .background(Capsule().fill(kind == k ? AnyShapeStyle(cAccent) : AnyShapeStyle(cInk2.opacity(0.12))))
+                    }.buttonStyle(.plain)
+                }
+                Spacer()
+            }
+        } else {
+            Picker("", selection: $kind) {
+                ForEach(Cinema.Kind.allCases, id: \.self) { Text($0.label).tag($0) }
+            }.pickerStyle(.segmented)
+            .onChange(of: kind) { _, _ in onChange() }
+        }
     }
 }
 
 extension View {
     func glass(_ r: CGFloat = 20) -> some View { self.padding(14).background(.ultraThinMaterial, in: .rect(cornerRadius: r)) }
     /// Abschnitts-Überschrift im Apple-TV-Stil: kräftig, normale Schreibweise.
-    func label2() -> some View { self.font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.65)) }
+    func label2() -> some View { self.font(kBody(14, .semibold)).foregroundStyle(cInk2.opacity(0.65)) }
 }
 
 // MARK: - Modelle
@@ -35,8 +123,9 @@ struct KItem: Decodable, Identifiable {   // Library-Eintrag
     let monitored: Bool?; let hasFile: Bool?; let size_gb: Double?
     let backdrop: String?          // 16:9-Hintergrund (Hero-Banner), sobald das Backend es liefert
     let genres: [String]?          // Kategorien (Action, Comedy, …) für Genre-Reihen
+    let tmdb: Int?                 // TMDB-ID → Titel-Logo (clearlogo) fürs Hero-Banner
     var kind: String = "movie"     // wird nach dem Dekodieren gesetzt (nicht im JSON)
-    enum CodingKeys: String, CodingKey { case id, title, year, poster, monitored, hasFile, size_gb, backdrop, genres }
+    enum CodingKeys: String, CodingKey { case id, title, year, poster, monitored, hasFile, size_gb, backdrop, genres, tmdb }
     /// Stabile, kollisionsfreie Kennung über Film+Serie hinweg (Radarr/Sonarr-IDs starten beide bei 1).
     var uid: String { "\(kind)-\(id)" }
     var hero: String? { backdrop ?? poster }
@@ -49,6 +138,30 @@ struct Suggestion: Decodable, Identifiable {  // Jellyseerr-Vorschlag (Discover)
     let title: String; let year: Int?; let poster: String?; let overview: String?; let kind: String; let tmdb: Int?
     var id: String { "\(kind)-\(tmdb ?? title.hashValue)" }
 }
+struct KCast: Decodable, Identifiable {  // Besetzung (JellyTV-Style)
+    let name: String; let role: String?; let photo: String?
+    var id: String { name + (role ?? "") }
+}
+struct KSimilar: Decodable, Identifiable {  // ähnlicher Titel
+    let title: String; let poster: String?; let tmdb: Int?; let year: String?
+    var id: String { "\(tmdb ?? title.hashValue)" }
+}
+struct KDetails: Decodable {  // Reiche TMDB/Jellyseerr-Infos
+    let overview: String?; let tagline: String?; let rating: Double; let runtime: Int?
+    let genres: [String]; let cast: [KCast]; let backdrop: String?; let similar: [KSimilar]?
+}
+
+// ── Kompressions-/Flug-Status (3080) ──
+struct FlightJob: Decodable, Identifiable {   // ein Job auf dem Server (queued/compressing/ready)
+    let title: String?; let quality: String?; let profile: String?
+    let status: String; let elapsed_sec: Int?; let pct: Double?; let eta_sec: Int?
+    var id: String { (title ?? "?") + status }
+}
+struct PCStatus: Decodable {                  // Live-GPU-Heartbeat vom PC (falls Reporter läuft)
+    let gpu_util: Double?; let gpu_watt: Double?; let gpu_temp: Double?
+    let phase: String?; let ffmpeg: Bool?; let online: Bool?; let age_sec: Int?
+}
+struct FlightQueue: Decodable { let jobs: [FlightJob]; let pc: PCStatus?; let active: Bool }
 
 // MARK: - API (nur Medien)
 @MainActor
@@ -64,6 +177,7 @@ final class Cinema: ObservableObject {
     @Published var busy = false
     @Published var homeLoaded = false
     @Published var toast = ""
+    @Published var flightQueue: FlightQueue?           // Kompressions-Status (3080)
 
     /// Titel (egal ob Film/Serie) anhand der stabilen uid finden — für Favoriten/Weiterschauen.
     func item(uid: String) -> KItem? { (movies + series).first { $0.uid == uid } }
@@ -104,13 +218,34 @@ final class Cinema: ObservableObject {
     }
     func request(_ item: KResult) {
         Task {
-            var body: [String: Any] = ["kind": kind.rawValue, "term": item.title]
+            var body: [String: Any] = ["kind": kind.rawValue, "term": item.title, "profile": girlie ? "ari" : "nico"]
             if let k = item.key { body["key"] = k }
             struct R: Decodable { let status: String? }
             if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body)),
                let r = try? JSONDecoder().decode(R.self, from: d) { toast = "\(item.title) angefragt — \(r.status ?? "ok")" }
             else { toast = "Konnte nicht anfragen" }
             await search(item.title)
+            try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
+        }
+    }
+
+    /// Reiche Infos (Bewertung/Handlung/Besetzung/ähnliche) aus Jellyseerr/TMDB — JellyTV-Style.
+    func details(for item: KItem) async -> KDetails? {
+        let enc = item.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? item.title
+        var q = "title=\(enc)&kind=\(item.kind)"
+        if let y = item.year { q += "&year=\(y)" }
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/details?\(q)")),
+              let r = try? JSONDecoder().decode(KDetails.self, from: d) else { return nil }
+        return r
+    }
+
+    /// Einen „ähnlichen Titel" (aus dem Detail, JellyTV „More Like This") direkt anfragen.
+    func requestSimilar(_ s: KSimilar, kind: String) {
+        requested.insert(s.id)
+        Task {
+            let body: [String: Any] = ["kind": kind, "term": s.title, "profile": girlie ? "ari" : "nico"]
+            _ = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body))
+            toast = "\(s.title) angefragt ✓"
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
         }
     }
@@ -126,40 +261,99 @@ final class Cinema: ObservableObject {
     func requestSuggestion(_ s: Suggestion) {
         requested.insert(s.id)
         Task {
-            let body: [String: Any] = ["kind": s.kind == "series" ? "series" : "movie", "term": s.title]
+            let body: [String: Any] = ["kind": s.kind == "series" ? "series" : "movie", "term": s.title, "profile": girlie ? "ari" : "nico"]
             _ = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body))
             toast = "\(s.title) angefragt ✓"
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
         }
     }
 
-    /// Flug-Download über den PC anfragen (komprimiert per NVENC). Profil bestimmt die Größe.
-    func prepareFlightDownload(_ item: KItem, profile: String) {
+    /// EIN-Klick-Download: PC (RTX 3080) komprimiert (Profil bestimmt die Größe: Ari 720p / Nico 1080p),
+    /// sobald fertig lädt die App die kleine Datei automatisch aufs Gerät (mit Fortschritt).
+    func startFlightDownload(_ item: KItem, profile: String) {
+        let dl = Downloads.shared
+        guard !dl.isDownloaded(item.uid), !dl.isDownloading(item.uid), !dl.isCompressing(item.uid) else { return }
+        let quality = profile == "ari" ? "klein (720p)" : "1080p"
+        dl.compressing.insert(item.uid)
+        // Live Activity: Phase 1 = Kompression auf der 3080 (unbestimmt).
+        FlightLive.shared.begin(uid: item.uid, title: item.title, quality: quality,
+                                phase: "compressing", progress: -1, detail: "3080 komprimiert …")
         Task {
+            // 1) Kompression auf dem PC anstoßen
             var body: [String: Any] = ["title": item.title, "kind": item.kind, "profile": profile]
             if let y = item.year { body["year"] = y }
-            struct R: Decodable { let quality: String? }
-            if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/prepare-download", method: "POST", body: body)),
-               let r = try? JSONDecoder().decode(R.self, from: d) {
-                toast = "Flug-Download wird vorbereitet (\(r.quality ?? "")) — Info kommt per Telegram ✈️"
-            } else { toast = "Konnte Flug-Download nicht anfragen" }
+            _ = try? await URLSession.shared.data(for: req("/api/media/prepare-download", method: "POST", body: body))
+            // 2) auf „ready" pollen (bis ~80 Min), dann automatisch laden. Großzügig, weil bei
+            //    mehreren Anfragen eine Warteschlange auf dem PC entstehen kann (jeder Film ~einige Min).
+            struct S: Decodable { let status: String; let url: String? }
+            let enc = item.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? item.title
+            for _ in 0..<600 {
+                try? await Task.sleep(nanoseconds: 8_000_000_000)
+                if !dl.isCompressing(item.uid) {            // vom User abgebrochen
+                    FlightLive.shared.end(uid: item.uid, detail: "abgebrochen"); return
+                }
+                guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/flight-status?title=\(enc)")),
+                      let s = try? JSONDecoder().decode(S.self, from: d) else { continue }
+                if s.status == "ready", let u = s.url, let url = await bestDownloadURL(u) {
+                    dl.compressing.remove(item.uid)
+                    // Phase 2 = Download aufs Gerät (Queue + Live-Fortschritt); danach Server-Cleanup.
+                    dl.enqueue(uid: item.uid, title: item.title, quality: quality,
+                               url: url, cleanupTitle: item.title)
+                    return
+                }
+            }
+            dl.compressing.remove(item.uid)
+            FlightLive.shared.end(uid: item.uid, detail: "Zeitüberschreitung")
+            toast = "Download-Vorbereitung hat zu lange gedauert — nochmal versuchen"
             try? await Task.sleep(nanoseconds: 4_000_000_000); toast = ""
         }
     }
-
-    /// Sind wir im Heimnetz? (Jellyfin direkt per LAN-IP erreichbar → uncompressed/hohe Bitrate)
-    func isLocal() async -> Bool {
-        var r = URLRequest(url: URL(string: "http://192.168.178.82:8096/System/Info/Public")!)
-        r.timeoutInterval = 1.5
-        if let (_, resp) = try? await URLSession.shared.data(for: r),
-           let h = resp as? HTTPURLResponse, h.statusCode == 200 { return true }
-        return false
+    func cancelCompressing(_ uid: String) {
+        Downloads.shared.compressing.remove(uid)
+        FlightLive.shared.end(uid: uid, detail: "abgebrochen")
     }
+
+    /// Beste Download-URL (aktuell schlicht die Server-URL — der Tailnet-Funnel funktioniert überall).
+    private func bestDownloadURL(_ u: String) async -> URL? { URL(string: u) }
+
+    /// JellyTV-Style Titel-Logo (clearlogo, TMDB) für ein Hero-Item — nil wenn keins existiert.
+    func logoURL(for item: KItem) async -> URL? {
+        guard let t = item.tmdb else { return nil }
+        struct R: Decodable { let logo: String? }
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/logo?kind=\(item.kind)&tmdb=\(t)")),
+              let r = try? JSONDecoder().decode(R.self, from: d), let s = r.logo else { return nil }
+        return URL(string: s)
+    }
+
+    /// Kompressions-Status (3080) für den Downloads-Tab laden.
+    func loadFlightQueue() async {
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/flight-queue")),
+              let r = try? JSONDecoder().decode(FlightQueue.self, from: d) else { return }
+        flightQueue = r
+    }
+
+    /// Nach dem Download aufs Gerät: komprimierte Variante serverseitig löschen (frisch-jedes-Mal).
+    nonisolated static func cleanupFlight(title: String) {
+        Task {
+            guard let url = URL(string: backendBase + "/api/media/flight-cleanup") else { return }
+            var r = URLRequest(url: url); r.httpMethod = "POST"
+            r.setValue("Bearer \(kinoToken)", forHTTPHeaderField: "Authorization")
+            r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            r.httpBody = try? JSONSerialization.data(withJSONObject: ["title": title])
+            _ = try? await URLSession.shared.data(for: r)
+        }
+    }
+
+    /// Heimnetz-Erkennung ist aktuell DEAKTIVIERT: das Backend liefert für `remote=0` eine
+    /// Docker-interne Adresse (`172.16.0.1:8096`), die von den Geräten NICHT erreichbar ist.
+    /// Deshalb immer den Tailnet-Funnel (`remote=1`, `jarvis…:8443`) nutzen — der geht überall.
+    /// (Reaktivieren, sobald das Backend eine client-erreichbare LAN-URL liefert — s. SHARED_API.)
+    func isLocal() async -> Bool { false }
 
     /// Spielbare HLS-URL holen. Lokal: hohe Bitrate (near-lossless). Unterwegs: komprimiert.
     func streamURL(for item: KItem) async -> URL? {
         let local = await isLocal()
-        let bitrate = local ? 40_000_000 : 6_000_000
+        let bitrate = local ? 40_000_000 : 8_000_000   // unterwegs: 1080p in guter Qualität
         let enc = item.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? item.title
         var q = "title=\(enc)&kind=\(item.kind)&maxbitrate=\(bitrate)&remote=\(local ? 0 : 1)"
         if let y = item.year { q += "&year=\(y)" }
@@ -182,32 +376,50 @@ final class Cinema: ObservableObject {
     }
 }
 
+/// Fängt die Background-URLSession-Events ab, wenn iOS die App zum Abschließen von Downloads weckt.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        Downloads.shared.backgroundCompletion = completionHandler
+    }
+}
+
 @main
 struct KinoApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var c = Cinema()
     @StateObject private var acc = Accounts()
     var body: some Scene {
         WindowGroup {
             RootView().environmentObject(c).environmentObject(acc)
-                .environmentObject(Downloads.shared).preferredColorScheme(.dark)
+                .environmentObject(Downloads.shared)
+                .preferredColorScheme(girlie ? .light : .dark)   // Ari: heller Brandy-Look
         }
     }
 }
 
 struct RootView: View {
     @EnvironmentObject var acc: Accounts
+    @State private var tab = RootView.initialTab()
+    static func initialTab() -> Int {
+        #if targetEnvironment(simulator)
+        if let s = ProcessInfo.processInfo.environment["KINO_DEMO_TAB"], let i = Int(s) { return i }
+        #endif
+        return 0
+    }
     var body: some View {
         if !acc.unlocked {
             AccessView()
         } else if acc.current == nil {
             ProfileView()
         } else {
-            TabView {
-                HomeView().tabItem { Label("Start", systemImage: "play.tv") }
-                SuggestionsView().tabItem { Label("Vorschläge", systemImage: "sparkles") }
-                DiscoverView().tabItem { Label("Bibliothek", systemImage: "film.stack") }
-                DownloadsView().tabItem { Label("Downloads", systemImage: "arrow.down.circle") }
-                SearchView().tabItem { Label("Anfragen", systemImage: "sparkle.magnifyingglass") }
+            TabView(selection: $tab) {
+                HomeView().tabItem { Label("Start", systemImage: "play.tv") }.tag(0)
+                SuggestionsView().tabItem { Label("Vorschläge", systemImage: "sparkles") }.tag(1)
+                DiscoverView().tabItem { Label("Bibliothek", systemImage: "film.stack") }.tag(2)
+                DownloadsView().tabItem { Label("Downloads", systemImage: "arrow.down.circle") }.tag(3)
+                SearchView().tabItem { Label("Anfragen", systemImage: "sparkle.magnifyingglass") }.tag(4)
             }.tint(cAccent)
         }
     }
