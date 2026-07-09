@@ -1,52 +1,85 @@
-<div align="center">
+# Kino
 
-# 🎬 Kino
+Mein eigenes kleines Kino fürs iPhone. Zuhause läuft ein Jellyfin-Server mit meiner
+Film- und Serien-Sammlung – Kino ist die App davor: aufmachen, Poster durchscrollen,
+antippen, läuft. Kein Netflix-Menü-Dschungel, kein „in deinem Land nicht verfügbar“.
+Nur meine Bibliothek, in der Optik, die ich mag.
 
-**Ein privater, Netflix-artiger Media-Player für iPhone, iPad & Mac.**
-Eigene Profile · 4K-HDR · Offline-Downloads für Flüge · Vorschläge.
+Die Optik heißt **Kinekt**: tiefes Schwarz, ein weicher farbiger Glow im Hintergrund,
+die Schrift dünn und weit gesperrt. Ruhig und ein bisschen wie aus dem Off – daran
+erkennt man alles, was zu meinem Setup gehört.
 
-</div>
+<p align="center">
+  <img src="docs/screenshots/home.png" width="24%" alt="Start" />
+  <img src="docs/screenshots/library.png" width="24%" alt="Bibliothek" />
+  <img src="docs/screenshots/suggestions.png" width="24%" alt="Vorschläge" />
+  <img src="docs/screenshots/downloads.png" width="24%" alt="Downloads" />
+</p>
 
----
+## Was die App kann
 
-## 📥 Installieren
+- **Start** – ein rotierender Aufmacher, „Weiter ansehen“, Favoriten und dann die
+  Bibliothek nach Filmen, Serien und Genres sortiert. Der Fortschritt merkt sich pro
+  Profil, wo ich stehengeblieben bin.
+- **Bibliothek** – das komplette Regal als Poster-Raster, umschaltbar zwischen Filmen
+  und Serien. Poster kommen in der passenden Größe vom Server, nicht als
+  Riesen-Originale – deshalb baut sich das Raster sofort auf.
+- **Player** – nativer Videoplayer mit Untertiteln, Tonspuren, AirPlay und PiP. Vor dem
+  Abspielen wähle ich pro Titel **gute Qualität** (Original, nichts wird neu kodiert)
+  oder **datensparend** (komprimiert fürs Handynetz). Wo ich war, wird gespeichert.
+- **Downloads** – ein Klick, und der Titel wird zuhause auf einem Rechner mit GPU klein
+  gerechnet und danach automatisch aufs Gerät geladen. Gut für Flüge und U-Bahn.
+- **Vorschläge & Anfragen** – was gerade beliebt/im Trend ist, und die Suche: fehlt ein
+  Film, wird er per Antippen angefragt und landet später von selbst in der Bibliothek.
 
-### iPhone / iPad (ohne App Store, ohne PC-Kabel-Stress)
-1. **SideStore** einmal einrichten (Anleitung: https://sidestore.io).
-2. In SideStore **Sources** öffnen → **+** → diese URL einfügen:
-   ```
-   https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/source/apps.json
-   ```
-3. **Kino** erscheint → **Get** → installiert. Danach **automatische Updates über WLAN**.
+## Anmelden
 
-*Alternativ:* die fertige [`install/Kino.ipa`](install/Kino.ipa) direkt in SideStore laden.
+Kein Passwort-Feld. Der Ablauf:
 
-### Mac
-Aus dem Quellcode als Mac-App bauen (Mac Catalyst) — siehe [`kino/`](kino).
+1. **2FA-Code** anfragen – der Code kommt per Telegram auf mein Handy und schaltet das
+   Gerät frei.
+2. **User-Code** eingeben – der persönliche Code entscheidet, welche Profile jemand
+   überhaupt sieht. Wer nur sein eigenes Profil freigeschaltet hat, sieht auch nur das.
+3. **Profil wählen** – fertig. Keine extra PIN, weil der User-Code schon regelt, was
+   sichtbar ist.
 
----
+Welche Codes welche Profile freischalten, entscheidet der Server (per Umgebungsvariable),
+nicht die App. So kann ich Zugänge ändern, ohne eine neue Version zu bauen.
 
-## 🔐 Login & Sicherheit
-Kino hat einen **eigenen Login** (Profil + Passwort). Das ist bewusst so gebaut, dass die App
-**ausschließlich Medien** sehen kann:
+## Wie es gebaut ist
 
-- **Kein Server-Zugriff:** Das Login-Token ist *media-scoped* — es öffnet nur die Film-/Serien-Funktionen.
-  Server, Dateien, System-Einstellungen sind für die App **unerreichbar** (serverseitig geblockt).
-- **Kein Geheimnis im Code:** Die App enthält **keinen** Admin-Token. Erst nach dem Login liegt ein
-  scoped Token **verschlüsselt im Keychain**.
-- **Brute-Force-geschützt:** Login mit Rate-Limit + starkem Passwort.
-- **Einmal einloggen:** Danach bleibt man angemeldet — stressfrei, auch offline.
+- **App:** SwiftUI, ein AVPlayer für die Wiedergabe, XcodeGen fürs Projekt. Kein
+  Storyboard, kein Fremd-SDK.
+- **Backend:** ein schlankes FastAPI-Backend (Teil von „Kinekt“), das vor Jellyfin sitzt
+  und die App-Endpunkte liefert – Bibliothek, Streaming-URLs, Poster, Login, Downloads.
+  Erreichbar nur übers eigene Tailnet (Tailscale), nicht offen im Netz.
+- **Server:** Jellyfin + das Arr-Gespann (Radarr/Sonarr/Prowlarr/qBittorrent) auf einem
+  Homeserver.
 
-> Der Server ist über eine feste Adresse erreichbar (kein VPN nötig); jeder Zugriff ist login- & scope-geschützt.
+## Selbst bauen
 
----
+```bash
+brew install xcodegen
+cd kino
+xcodegen generate
+open Kino.xcodeproj
+```
 
-## ✨ Features
-- **Zwei Profile** mit getrennten „Weiterschauen"- & Favoriten-Listen
-- **Apple-TV-artige Startseite** mit rotierenden Hero-Bannern & Genre-Reihen
-- **Vorschläge-Tab** (beliebt & im Trend) — antippen zum Anfragen
-- **Player** mit 4K-HDR (zuhause volle Qualität, unterwegs komprimiert), Untertitel, Resume
-- **Offline-Downloads** (komprimiert) mit Download-Seite inkl. Live-Geschwindigkeit — perfekt für Flüge
-- **iPhone · iPad · Mac** aus einer Codebasis (SwiftUI / Mac Catalyst)
+In `kino/project.yml` das eigene `DEVELOPMENT_TEAM` eintragen. Aufs Gerät kommt die App bei
+mir per Sideload (SideStore) als `.ipa` – dafür reicht ein Debug- oder unsigniertes
+Release-Build, signiert wird beim Installieren.
 
-<div align="center"><sub>🤖 Gebaut mit Claude Code</sub></div>
+## Screenshots erzeugen
+
+Im Simulator geht ein Demo-Modus, der ohne Login direkt in die App springt und einen
+Tab vorwählt:
+
+```bash
+SIMCTL_CHILD_KINO_DEMO_TOKEN="<media-token>" \
+SIMCTL_CHILD_KINO_DEMO_TAB=0 \
+xcrun simctl launch booted com.nicolas.Kino
+xcrun simctl io booted screenshot home.png
+```
+
+`KINO_DEMO_TAB` 0–4 = Start · Vorschläge · Bibliothek · Downloads · Anfragen. Die
+Screenshots oben sind genau so entstanden.

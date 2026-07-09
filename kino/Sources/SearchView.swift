@@ -8,21 +8,18 @@ struct SearchView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Anfragen").font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
+                Text("Anfragen").font(kTitle(30)).kChrome().foregroundStyle(cInk)
                 Spacer()
             }.padding(.horizontal, 20).padding(.top, 14)
 
-            Picker("", selection: $c.kind) {
-                ForEach(Cinema.Kind.allCases, id: \.self) { Text($0.label).tag($0) }
-            }.pickerStyle(.segmented).padding(.horizontal, 18)
-            .onChange(of: c.kind) { _, _ in Task { await c.search(query) } }
+            KindSwitch(kind: $c.kind) { Task { await c.search(query) } }.padding(.horizontal, 18)
 
             HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.white.opacity(0.5))
-                TextField("Film oder Serie suchen …", text: $query).foregroundStyle(.white)
+                Image(systemName: "magnifyingglass").foregroundStyle(cInk2.opacity(0.5))
+                TextField("Film oder Serie suchen …", text: $query).foregroundStyle(cInk)
                     .autocorrectionDisabled().textInputAutocapitalization(.words)
                     .onSubmit { Task { await c.search(query) } }
-                if c.busy { ProgressView().tint(.white) }
+                if c.busy { ProgressView().tint(cInk) }
             }.glass(28).padding(.horizontal, 18)
 
             ScrollView {
@@ -42,17 +39,17 @@ struct SearchView: View {
 
     private func row(_ r: KResult) -> some View {
         HStack(spacing: 12) {
-            AsyncImage(url: URL(string: r.poster ?? "")) { img in
+            CachedImage(url: URL(string: r.poster ?? "")) { img in
                 img.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
                 RoundedRectangle(cornerRadius: 8).fill(.white.opacity(0.08))
-                    .overlay(Image(systemName: "photo").foregroundStyle(.white.opacity(0.25)))
+                    .overlay(Image(systemName: "photo").foregroundStyle(cInk2.opacity(0.25)))
             }
             .frame(width: 52, height: 78).clipShape(RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 3) {
-                Text(r.title).font(.system(size: 15)).foregroundStyle(.white).lineLimit(1)
-                if let y = r.year { Text(String(y)).font(.system(size: 12, weight: .light)).foregroundStyle(.white.opacity(0.5)) }
-                Text(r.overview ?? "").font(.system(size: 11, weight: .light)).foregroundStyle(.white.opacity(0.5)).lineLimit(2)
+                Text(r.title).font(.system(size: 15)).foregroundStyle(cInk).lineLimit(1)
+                if let y = r.year { Text(String(y)).font(.system(size: 12, weight: .light)).foregroundStyle(cInk2.opacity(0.5)) }
+                Text(r.overview ?? "").font(.system(size: 11, weight: .light)).foregroundStyle(cInk2.opacity(0.5)).lineLimit(2)
             }
             Spacer()
             if r.added {

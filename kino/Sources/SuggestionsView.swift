@@ -27,7 +27,7 @@ struct SuggestionsView: View {
                 }.padding(.top, 12).padding(.bottom, 30)
             }
             if !c.toast.isEmpty {
-                Text(c.toast).font(.system(size: 13, weight: .light)).foregroundStyle(.white)
+                Text(c.toast).font(.system(size: 13, weight: .light)).foregroundStyle(cInk)
                     .padding(.horizontal, 18).padding(.vertical, 11)
                     .glassEffect(.regular, in: .capsule).padding(.bottom, 20)
             }
@@ -38,8 +38,8 @@ struct SuggestionsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Vorschläge").font(.system(size: 30, weight: .bold)).foregroundStyle(.white)
-            Text("Beliebt & im Trend — antippen zum Anfragen").font(.system(size: 13, weight: .regular)).foregroundStyle(.white.opacity(0.55))
+            Text("Vorschläge").font(kTitle(30)).kChrome().foregroundStyle(cInk)
+            Text("Beliebt & im Trend — antippen zum Anfragen").font(.system(size: 13, weight: .regular)).foregroundStyle(cInk2.opacity(0.55))
         }.padding(.horizontal, 18)
     }
 
@@ -52,9 +52,9 @@ struct SuggestionsView: View {
                 } label: {
                     Text(k.label)
                         .font(.system(size: 14, weight: kind == k ? .semibold : .regular))
-                        .foregroundStyle(kind == k ? .black : .white.opacity(0.7))
+                        .foregroundStyle(kind == k ? AnyShapeStyle(girlie ? Color.white : Color.black) : AnyShapeStyle(cInk2.opacity(0.7)))
                         .padding(.horizontal, 18).padding(.vertical, 9)
-                        .background(Capsule().fill(kind == k ? Color.white : .white.opacity(0.1)))
+                        .background(Capsule().fill(kind == k ? AnyShapeStyle(girlie ? cAccent : Color.white) : AnyShapeStyle(girlie ? cInk2.opacity(0.12) : .white.opacity(0.1))))
                 }.buttonStyle(.plain)
             }
             Spacer()
@@ -66,12 +66,12 @@ struct SuggestionsView: View {
         return Button { detail = s } label: {
             VStack(alignment: .leading, spacing: 6) {
                 ZStack(alignment: .topTrailing) {
-                    AsyncImage(url: URL(string: s.poster ?? "")) { img in
+                    CachedImage(url: URL(string: s.poster ?? "")) { img in
                         img.resizable().aspectRatio(2/3, contentMode: .fill)
                     } placeholder: {
                         RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.08))
                             .aspectRatio(2/3, contentMode: .fit)
-                            .overlay(Image(systemName: "film").foregroundStyle(.white.opacity(0.25)))
+                            .overlay(Image(systemName: "film").foregroundStyle(cInk2.opacity(0.25)))
                     }
                     .frame(height: 165).frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 12))
                     if req {
@@ -79,8 +79,8 @@ struct SuggestionsView: View {
                             .foregroundStyle(cGood).padding(6).shadow(radius: 3)
                     }
                 }
-                Text(s.title).font(.system(size: 12)).foregroundStyle(.white.opacity(0.9)).lineLimit(1)
-                if let y = s.year { Text(String(y)).font(.system(size: 10, weight: .light)).foregroundStyle(.white.opacity(0.45)) }
+                Text(s.title).font(.system(size: 12)).foregroundStyle(cInk2.opacity(0.9)).lineLimit(1)
+                if let y = s.year { Text(String(y)).font(.system(size: 10, weight: .light)).foregroundStyle(cInk2.opacity(0.45)) }
             }
         }.buttonStyle(.plain)
     }
@@ -91,33 +91,33 @@ struct SuggestionsView: View {
             KinoBackground()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    AsyncImage(url: URL(string: s.poster ?? "")) { img in
+                    CachedImage(url: URL(string: s.poster ?? "")) { img in
                         img.resizable().aspectRatio(contentMode: .fit)
                     } placeholder: { Rectangle().fill(.white.opacity(0.08)).frame(height: 240) }
                     .frame(maxWidth: .infinity).clipShape(RoundedRectangle(cornerRadius: 16))
-                    Text(s.title).font(.system(size: 24, weight: .semibold)).foregroundStyle(.white)
+                    Text(s.title).font(kTitle(24)).foregroundStyle(cInk)
                     HStack(spacing: 10) {
                         if let y = s.year { pill(String(y)) }
                         pill(s.kind == "series" ? "Serie" : "Film")
                     }
                     if let o = s.overview, !o.isEmpty {
-                        Text(o).font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
+                        Text(o).font(.system(size: 14)).foregroundStyle(cInk2.opacity(0.75))
                     }
                     Button { c.requestSuggestion(s) } label: {
                         Label(req ? "Angefragt" : "Anfragen", systemImage: req ? "checkmark" : "plus")
-                            .font(.system(size: 16, weight: .semibold)).foregroundStyle(.black)
+                            .font(.system(size: 16, weight: .semibold)).foregroundStyle(girlie ? .white : .black)
                             .frame(maxWidth: .infinity).padding(.vertical, 13)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(req ? cGood : Color.white))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(req ? AnyShapeStyle(cGood) : AnyShapeStyle(girlie ? cAccent : Color.white)))
                     }.buttonStyle(.plain).disabled(req)
                     Text("Angefragte Titel werden automatisch geladen und erscheinen dann in der Bibliothek.")
-                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.5))
+                        .font(.system(size: 12)).foregroundStyle(cInk2.opacity(0.5))
                 }.padding(20)
             }
         }
     }
 
     private func pill(_ t: String) -> some View {
-        Text(t).font(.system(size: 12, weight: .light)).foregroundStyle(.white.opacity(0.8))
+        Text(t).font(.system(size: 12, weight: .light)).foregroundStyle(cInk2.opacity(0.8))
             .padding(.horizontal, 12).padding(.vertical, 6).background(Capsule().fill(.white.opacity(0.1)))
     }
 }
