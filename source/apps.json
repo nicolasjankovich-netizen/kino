@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "1.3",
+      "version": "1.4",
       "versionDate": "2026-07-09",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
       "localizedDescription": "Kino im Kinekt-Look: 2FA-Login mit persoenlichem User-Code, waehlbare Stream-Qualitaet (gute Qualitaet oder datensparend), schnelle Bibliothek, Vorschlaege und Offline-/Flug-Downloads.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1062001
+      "size": 1086399
     }
   ]
 }

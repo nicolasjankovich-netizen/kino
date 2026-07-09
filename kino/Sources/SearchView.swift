@@ -24,17 +24,52 @@ struct SearchView: View {
 
             ScrollView {
                 VStack(spacing: 12) {
+                    if !c.myRequests.isEmpty {
+                        HStack { Text("Deine Anfragen").font(.system(size: 13, weight: .semibold)).kChrome().foregroundStyle(cInk2.opacity(0.75)); Spacer() }.padding(.top, 2)
+                        ForEach(c.myRequests) { rq in requestRow(rq) }
+                        if !c.results.isEmpty {
+                            HStack { Text("Suche").font(.system(size: 13, weight: .semibold)).kChrome().foregroundStyle(cInk2.opacity(0.75)); Spacer() }.padding(.top, 6)
+                        }
+                    }
                     ForEach(c.results) { r in row(r) }
                     if c.results.isEmpty && !query.isEmpty && !c.busy {
                         Text("Nichts gefunden").label2().padding(.top, 30)
                     }
                 }.padding(.horizontal, 18).padding(.bottom, 12)
             }
+            .refreshable { await c.loadMyRequests(); await c.pollNotifications() }
             if !c.toast.isEmpty {
-                Text(c.toast).font(.system(size: 12, weight: .light)).foregroundStyle(cCyan).padding(.bottom, 6)
+                Text(c.toast).font(.system(size: 12, weight: .light)).foregroundStyle(cCyan)
+                    .multilineTextAlignment(.center).padding(.horizontal, 20).padding(.bottom, 6)
             }
         }
         .background(KinoBackground())
+        .task {
+            await c.loadMyRequests(); await c.pollNotifications()
+            while !Task.isCancelled {                        // Status live halten, solange der Tab offen ist
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                await c.loadMyRequests(); await c.pollNotifications()
+            }
+        }
+    }
+
+    /// Kompakte Zeile für eine eigene Anfrage mit Live-Status.
+    private func requestRow(_ rq: KRequest) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: rq.symbol)
+                .font(.system(size: 22))
+                .foregroundStyle(rq.status == "available" ? cGood : (rq.status == "retrying" ? cWarn : cAccent))
+                .symbolEffect(.pulse, isActive: rq.status == "searching" || rq.status == "downloading")
+                .frame(width: 30)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(rq.title).font(.system(size: 15)).foregroundStyle(cInk).lineLimit(1)
+                Text(rq.label).font(.system(size: 12, weight: .light)).foregroundStyle(cInk2.opacity(0.6))
+            }
+            Spacer()
+            if rq.status == "downloading", let p = rq.progress {
+                Text("\(Int(p * 100)) %").font(.system(size: 13, weight: .medium)).foregroundStyle(cAccent)
+            }
+        }.glass(18)
     }
 
     private func row(_ r: KResult) -> some View {

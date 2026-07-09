@@ -195,6 +195,28 @@ struct KResult: Decodable, Identifiable {  // Suchtreffer
     let title: String; let year: Int?; let key: Int?; let overview: String?; let poster: String?; let added: Bool
     var id: String { key.map(String.init) ?? title }
 }
+struct KRequest: Decodable, Identifiable {  // eigene Anfrage + Live-Status (Beschaffungs-Agent)
+    let rid: String; let title: String; let kind: String; let status: String
+    let progress: Double?; let year: Int?
+    var id: String { rid }
+    /// Menschlicher Status-Text + Symbol/Farbe für die Anfragen-Liste.
+    var label: String {
+        switch status {
+        case "available":   return "verfügbar"
+        case "downloading": return "lädt \(Int((progress ?? 0) * 100)) %"
+        case "retrying":    return "hing – neuer Versuch"
+        default:             return "sucht Release …"
+        }
+    }
+    var symbol: String {
+        switch status {
+        case "available": return "checkmark.circle.fill"
+        case "downloading": return "arrow.down.circle.fill"
+        case "retrying": return "arrow.triangle.2.circlepath"
+        default: return "magnifyingglass.circle.fill"
+        }
+    }
+}
 struct Suggestion: Decodable, Identifiable {  // Jellyseerr-Vorschlag (Discover)
     let title: String; let year: Int?; let poster: String?; let overview: String?; let kind: String; let tmdb: Int?
     var id: String { "\(kind)-\(tmdb ?? title.hashValue)" }
@@ -239,9 +261,35 @@ final class Cinema: ObservableObject {
     @Published var homeLoaded = false
     @Published var toast = ""
     @Published var flightQueue: FlightQueue?           // Kompressions-Status (3080)
+    @Published var myRequests: [KRequest] = []         // eigene Anfragen + Live-Status (Beschaffungs-Agent)
+
+    /// Aktives Profil (nico/ari/timu) fürs Backend — Besteller-Zuordnung im Agenten.
+    var profileId: String { UserDefaults.standard.string(forKey: "lastAccount") ?? (girlie ? "ari" : "nico") }
 
     /// Titel (egal ob Film/Serie) anhand der stabilen uid finden — für Favoriten/Weiterschauen.
     func item(uid: String) -> KItem? { (movies + series).first { $0.uid == uid } }
+
+    /// Eigene Anfragen mit Live-Status laden (Suchen/Lädt/Verfügbar/Neuer Versuch).
+    func loadMyRequests() async {
+        struct R: Decodable { let requests: [KRequest] }
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/my-requests?profile=\(profileId)")),
+              let r = try? JSONDecoder().decode(R.self, from: d) else { return }
+        myRequests = r.requests
+    }
+
+    /// Neue Status-Benachrichtigungen abholen und als Toast zeigen (Polling).
+    func pollNotifications() async {
+        struct Notif: Decodable { let title: String; let msg: String; let status: String }
+        struct N: Decodable { let notifications: [Notif]; let now: Double }
+        let key = "notif_since_\(profileId)"
+        let since = UserDefaults.standard.double(forKey: key)
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/notifications?profile=\(profileId)&since=\(since)")),
+              let r = try? JSONDecoder().decode(N.self, from: d) else { return }
+        UserDefaults.standard.set(r.now, forKey: key)
+        guard let last = r.notifications.last else { return }
+        toast = last.msg
+        try? await Task.sleep(nanoseconds: 5_000_000_000); toast = ""
+    }
 
     private func req(_ path: String, method: String = "GET", body: [String: Any]? = nil) -> URLRequest {
         var r = URLRequest(url: URL(string: backendBase + path)!)
@@ -279,13 +327,14 @@ final class Cinema: ObservableObject {
     }
     func request(_ item: KResult) {
         Task {
-            var body: [String: Any] = ["kind": kind.rawValue, "term": item.title, "profile": girlie ? "ari" : "nico"]
+            var body: [String: Any] = ["kind": kind.rawValue, "term": item.title, "profile": profileId]
             if let k = item.key { body["key"] = k }
             struct R: Decodable { let status: String? }
             if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body)),
                let r = try? JSONDecoder().decode(R.self, from: d) { toast = "\(item.title) angefragt — \(r.status ?? "ok")" }
             else { toast = "Konnte nicht anfragen" }
             await search(item.title)
+            await loadMyRequests()                     // neue Anfrage sofort in der Liste zeigen
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
         }
     }
@@ -304,7 +353,7 @@ final class Cinema: ObservableObject {
     func requestSimilar(_ s: KSimilar, kind: String) {
         requested.insert(s.id)
         Task {
-            let body: [String: Any] = ["kind": kind, "term": s.title, "profile": girlie ? "ari" : "nico"]
+            let body: [String: Any] = ["kind": kind, "term": s.title, "profile": profileId]
             _ = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body))
             toast = "\(s.title) angefragt ✓"
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
@@ -322,7 +371,7 @@ final class Cinema: ObservableObject {
     func requestSuggestion(_ s: Suggestion) {
         requested.insert(s.id)
         Task {
-            let body: [String: Any] = ["kind": s.kind == "series" ? "series" : "movie", "term": s.title, "profile": girlie ? "ari" : "nico"]
+            let body: [String: Any] = ["kind": s.kind == "series" ? "series" : "movie", "term": s.title, "profile": profileId]
             _ = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body))
             toast = "\(s.title) angefragt ✓"
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
