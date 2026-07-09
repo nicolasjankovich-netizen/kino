@@ -323,9 +323,7 @@ struct DetailView: View {
 
                             Button { downloadTapped() } label: {
                                 ZStack {
-                                    if dl.isCompressing(item.uid) {
-                                        ProgressView().tint(cCyan).scaleEffect(0.8)
-                                    } else if dl.isDownloading(item.uid) {
+                                    if dl.isDownloading(item.uid) {
                                         Circle().trim(from: 0, to: dl.progress[item.uid] ?? 0)
                                             .stroke(cGood, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                                             .rotationEffect(.degrees(-90)).frame(width: 26, height: 26)
@@ -352,12 +350,10 @@ struct DetailView: View {
                             }
                         }
 
-                        if dl.isCompressing(item.uid) {
-                            Label("wird für dich komprimiert (läuft auf dem PC) — lädt gleich automatisch aufs Gerät",
-                                  systemImage: "bolt.badge.clock")
-                                .font(.system(size: 12)).foregroundStyle(cCyan)
-                        } else if dl.isDownloading(item.uid) {
-                            Text("lädt aufs Gerät … \(Int((dl.progress[item.uid] ?? 0) * 100)) %")
+                        if dl.isDownloading(item.uid) {
+                            let spd = dl.speed[item.uid] ?? 0
+                            Text("lädt aufs Gerät … \(Int((dl.progress[item.uid] ?? 0) * 100)) %"
+                                 + (spd > 0 ? " · \(Downloads.byteStr(Int64(spd)))/s" : ""))
                                 .font(.system(size: 12)).foregroundStyle(cGood)
                         } else if dl.isDownloaded(item.uid) {
                             Label("offline auf dem Gerät", systemImage: "checkmark.circle.fill")
@@ -450,12 +446,10 @@ struct DetailView: View {
     private func start() { showPlayer = true }
 
     private func downloadTapped() {
-        if dl.isDownloaded(item.uid) {
-            dl.delete(item.uid)
-        } else if dl.isCompressing(item.uid) {
-            c.cancelCompressing(item.uid)                       // erneut tippen bricht ab
-        } else if !dl.isDownloading(item.uid) {
-            c.startFlightDownload(item, profile: acc.current?.id ?? "nico")   // 1 Klick: komprimieren → auto-laden
+        if dl.isDownloaded(item.uid) || dl.isDownloading(item.uid) {
+            dl.delete(item.uid)                                 // erneut tippen = löschen/abbrechen
+        } else {
+            c.startFlightDownload(item, profile: acc.current?.id ?? "nico")   // 1 Klick: fertige Datei direkt laden
         }
     }
 }

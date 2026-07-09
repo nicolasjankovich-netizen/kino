@@ -378,50 +378,32 @@ final class Cinema: ObservableObject {
         }
     }
 
-    /// EIN-Klick-Download: PC (RTX 3080) komprimiert (Profil bestimmt die Größe: Ari 720p / Nico 1080p),
-    /// sobald fertig lädt die App die kleine Datei automatisch aufs Gerät (mit Fortschritt).
+    /// EIN-Klick-Download: lädt die auf dem Server BEREITS FERTIGE Datei direkt aufs Gerät
+    /// (kein On-Demand-Komprimieren mehr). Qualität wählt 720p (datensparend) oder 1080p (gute Quali).
+    /// Ist die 1080p-Fassung noch nicht produziert, sagt der Server ready:false → kurzer Hinweis.
     func startFlightDownload(_ item: KItem, profile: String, quality: KinoQuality = .current) {
         let dl = Downloads.shared
-        guard !dl.isDownloaded(item.uid), !dl.isDownloading(item.uid), !dl.isCompressing(item.uid) else { return }
-        let label = quality == .sparsam ? "klein (720p)" : "1080p"
-        dl.compressing.insert(item.uid)
-        // Live Activity: Phase 1 = Kompression auf der 3080 (unbestimmt).
-        FlightLive.shared.begin(uid: item.uid, title: item.title, quality: label,
-                                phase: "compressing", progress: -1, detail: "3080 komprimiert …")
+        guard !dl.isDownloaded(item.uid), !dl.isDownloading(item.uid) else { return }
+        let q = quality == .sparsam ? "720" : "1080"
+        let label = quality == .sparsam ? "720p" : "1080p"
         Task {
-            // 1) Kompression auf dem PC anstoßen — Qualität (nicht Account) bestimmt die Größe.
-            var body: [String: Any] = ["title": item.title, "kind": item.kind,
-                                       "profile": profile, "quality": quality.rawValue]
-            if let y = item.year { body["year"] = y }
-            _ = try? await URLSession.shared.data(for: req("/api/media/prepare-download", method: "POST", body: body))
-            // 2) auf „ready" pollen (bis ~80 Min), dann automatisch laden. Großzügig, weil bei
-            //    mehreren Anfragen eine Warteschlange auf dem PC entstehen kann (jeder Film ~einige Min).
-            struct S: Decodable { let status: String; let url: String? }
+            let local = await isLocal()
             let enc = item.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? item.title
-            for _ in 0..<600 {
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-                if !dl.isCompressing(item.uid) {            // vom User abgebrochen
-                    FlightLive.shared.end(uid: item.uid, detail: "abgebrochen"); return
-                }
-                guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/flight-status?title=\(enc)")),
-                      let s = try? JSONDecoder().decode(S.self, from: d) else { continue }
-                if s.status == "ready", let u = s.url, let url = await bestDownloadURL(u) {
-                    dl.compressing.remove(item.uid)
-                    // Phase 2 = Download aufs Gerät (Queue + Live-Fortschritt); danach Server-Cleanup.
-                    dl.enqueue(uid: item.uid, title: item.title, quality: label,
-                               url: url, cleanupTitle: item.title)
-                    return
-                }
+            var path = "/api/media/download?title=\(enc)&quality=\(q)&remote=\(local ? 0 : 1)"
+            if let y = item.year { path += "&year=\(y)" }
+            struct R: Decodable { let ready: Bool; let url: String?; let have_other: Bool? }
+            guard let (d, _) = try? await URLSession.shared.data(for: req(path)),
+                  let r = try? JSONDecoder().decode(R.self, from: d) else {
+                toast = "Download gerade nicht erreichbar — Verbindung prüfen."
+                try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""; return
             }
-            dl.compressing.remove(item.uid)
-            FlightLive.shared.end(uid: item.uid, detail: "Zeitüberschreitung")
-            toast = "Download-Vorbereitung hat zu lange gedauert — nochmal versuchen"
-            try? await Task.sleep(nanoseconds: 4_000_000_000); toast = ""
+            if r.ready, let u = r.url, let url = await bestDownloadURL(u) {
+                dl.enqueue(uid: item.uid, title: item.title, quality: label, url: url, cleanupTitle: nil)
+            } else {
+                toast = "\(label) wird noch auf dem Server vorbereitet — versuch's gleich nochmal."
+                try? await Task.sleep(nanoseconds: 4_000_000_000); toast = ""
+            }
         }
-    }
-    func cancelCompressing(_ uid: String) {
-        Downloads.shared.compressing.remove(uid)
-        FlightLive.shared.end(uid: uid, detail: "abgebrochen")
     }
 
     /// Beste Download-URL: im Heimnetz die Funnel-URL (:8443, Relay ~3 MB/s) auf die direkte
