@@ -10,10 +10,13 @@ die Schrift dünn und weit gesperrt. Ruhig und ein bisschen wie aus dem Off – 
 erkennt man alles, was zu meinem Setup gehört.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="24%" alt="Start" />
-  <img src="docs/screenshots/library.png" width="24%" alt="Bibliothek" />
-  <img src="docs/screenshots/suggestions.png" width="24%" alt="Vorschläge" />
-  <img src="docs/screenshots/downloads.png" width="24%" alt="Downloads" />
+  <img src="docs/mockups/hero.png" alt="Kino" />
+</p>
+
+<p align="center">
+  <img src="docs/mockups/bibliothek.png" width="32%" alt="Bibliothek" />
+  <img src="docs/mockups/vorschlaege.png" width="32%" alt="Vorschläge" />
+  <img src="docs/mockups/anfragen.png" width="32%" alt="Anfragen" />
 </p>
 
 ## Was die App kann
