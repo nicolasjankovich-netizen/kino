@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Download-Übersicht: was die 3080 gerade komprimiert (mit %/GPU), was in der Queue wartet,
-/// was gerade aufs Gerät lädt (Live-Speed), und was offline verfügbar ist.
+/// Download-Übersicht: was gerade aufs Gerät lädt (Live-Speed), was in der Queue wartet,
+/// und was offline verfügbar ist. (Die Dateien liegen fertig auf dem Server — kein Komprimieren.)
 struct DownloadsView: View {
     @EnvironmentObject var c: Cinema
     @EnvironmentObject var dl: Downloads
@@ -14,11 +14,7 @@ struct DownloadsView: View {
     private var doneUIDs: [String]    { dl.done.sorted() }
     private var totalBytes: Int64 { doneUIDs.reduce(0) { $0 + dl.fileSize($1) } }
 
-    /// Kompressions-Jobs vom Server (queued/compressing) — die schon aufs Gerät laden, blenden wir aus.
-    private var compJobs: [FlightJob] {
-        (c.flightQueue?.jobs ?? []).filter { $0.status == "compressing" || $0.status == "queued" }
-    }
-    private var nothing: Bool { compJobs.isEmpty && activeUIDs.isEmpty && waitingJobs.isEmpty && doneUIDs.isEmpty }
+    private var nothing: Bool { activeUIDs.isEmpty && waitingJobs.isEmpty && doneUIDs.isEmpty }
 
     var body: some View {
         ZStack {
@@ -29,9 +25,6 @@ struct DownloadsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 26) {
                         header
-                        if !compJobs.isEmpty {
-                            section(pcHeader) { ForEach(compJobs) { compRow($0) } }
-                        }
                         if !activeUIDs.isEmpty {
                             section("Lädt aufs Gerät") { ForEach(activeUIDs, id: \.self) { loadingRow($0) } }
                         }
@@ -46,13 +39,7 @@ struct DownloadsView: View {
                 }
             }
         }
-        .task {
-            await c.loadHome()
-            while !Task.isCancelled {
-                await c.loadFlightQueue()
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-            }
-        }
+        .task { await c.loadHome() }
         .fullScreenCover(item: $playing) { PlayerView(item: $0) }
     }
 
@@ -63,22 +50,11 @@ struct DownloadsView: View {
         }
     }
 
-    /// Überschrift der Kompressions-Sektion inkl. Live-GPU, falls der PC-Reporter läuft.
-    private var pcHeader: String {
-        if let pc = c.flightQueue?.pc, pc.online == true {
-            var s = "3080 komprimiert"
-            if let w = pc.gpu_watt { s += " · \(Int(w)) W" }
-            if let t = pc.gpu_temp { s += " · \(Int(t))°" }
-            return s
-        }
-        return "Kompression (3080)"
-    }
-
     private var empty: some View {
         VStack(spacing: 14) {
             Image(systemName: "arrow.down.circle").font(.system(size: 44, weight: .light)).foregroundStyle(cAccent.opacity(0.9))
             Text("Noch keine Downloads").font(.system(size: 17, weight: .semibold)).foregroundStyle(cInk)
-            Text("Tippe bei einem Film auf das ↓-Symbol,\ndann komprimiert die 3080 ihn und lädt ihn hierher.")
+            Text("Tippe bei einem Film auf das ↓-Symbol,\ndann lädt er hier offline aufs Gerät.")
                 .font(.system(size: 13)).foregroundStyle(cInk2.opacity(0.55)).multilineTextAlignment(.center)
         }.padding(40)
     }
@@ -88,41 +64,6 @@ struct DownloadsView: View {
             Text(title).label2()
             content()
         }
-    }
-
-    // MARK: Kompressions-Zeile (Server-Status)
-    private func compRow(_ j: FlightJob) -> some View {
-        let it = j.title.flatMap { t in (c.movies + c.series).first { $0.title == t } }
-        let compressing = j.status == "compressing"
-        return HStack(spacing: 14) {
-            thumb(it)
-            VStack(alignment: .leading, spacing: 7) {
-                Text(j.title ?? "—").font(.system(size: 15, weight: .medium)).foregroundStyle(cInk).lineLimit(1)
-                if let pct = j.pct {
-                    ProgressView(value: min(1, max(0, pct/100))).tint(cCyan)
-                } else if compressing {
-                    ProgressView().tint(cCyan).frame(maxWidth: .infinity, alignment: .leading)
-                }
-                HStack(spacing: 8) {
-                    Image(systemName: compressing ? "bolt.badge.clock" : "hourglass")
-                        .font(.system(size: 11)).foregroundStyle(compressing ? cCyan : cInk2.opacity(0.5))
-                    Text(compRowLabel(j)).font(.system(size: 12, weight: .light)).foregroundStyle(cInk2.opacity(0.65))
-                    Spacer()
-                    if let q = j.quality { Text(q).font(.system(size: 11, weight: .light)).foregroundStyle(cInk2.opacity(0.4)) }
-                }
-            }
-        }
-        .padding(12).glassEffect(.regular, in: .rect(cornerRadius: 16))
-    }
-    private func compRowLabel(_ j: FlightJob) -> String {
-        if j.status == "queued" { return "in der Warteschlange" }
-        if let pct = j.pct {
-            var s = "\(Int(pct)) %"
-            if let e = j.eta_sec, e > 0 { s += " · noch \(mmss(e))" }
-            return s
-        }
-        if let el = j.elapsed_sec { return "wird komprimiert · \(mmss(el)) läuft" }
-        return "wird komprimiert …"
     }
 
     // MARK: Aktiver Download aufs Gerät
@@ -204,9 +145,5 @@ struct DownloadsView: View {
     private func byteStr(_ b: Int64) -> String {
         let f = ByteCountFormatter(); f.countStyle = .file
         return f.string(fromByteCount: b)
-    }
-    private func mmss(_ s: Int) -> String {
-        let m = s / 60, sec = s % 60
-        return m > 0 ? "\(m) min \(sec) s" : "\(sec) s"
     }
 }
