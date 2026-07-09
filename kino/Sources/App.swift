@@ -325,10 +325,25 @@ final class Cinema: ObservableObject {
         if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/search?kind=\(kind.rawValue)&term=\(enc)")),
            let r = try? JSONDecoder().decode(R.self, from: d) { results = r.results }
     }
+    /// Radarr/Sonarr-Quali-Profil-ID für die im Anfrage-Fenster gewählte Qualität (4k/1080p).
+    func qualityProfileId(kind: String) async -> Int? {
+        let want = UserDefaults.standard.string(forKey: "reqQuality") ?? "1080p"
+        struct P: Decodable { let id: Int; let name: String }
+        struct R: Decodable { let profiles: [P] }
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/profiles?kind=\(kind)")),
+              let r = try? JSONDecoder().decode(R.self, from: d) else { return nil }
+        func find(_ needles: [String]) -> Int? {
+            for n in needles { if let p = r.profiles.first(where: { $0.name.lowercased().contains(n) }) { return p.id } }
+            return nil
+        }
+        return want == "4k" ? find(["ultra-hd", "2160", "uhd", "4k"]) : find(["1080"])
+    }
+
     func request(_ item: KResult) {
         Task {
             var body: [String: Any] = ["kind": kind.rawValue, "term": item.title, "profile": profileId]
             if let k = item.key { body["key"] = k }
+            if let pid = await qualityProfileId(kind: kind.rawValue) { body["profileId"] = pid }
             struct R: Decodable { let status: String? }
             if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body)),
                let r = try? JSONDecoder().decode(R.self, from: d) { toast = "\(item.title) angefragt — \(r.status ?? "ok")" }
@@ -353,7 +368,8 @@ final class Cinema: ObservableObject {
     func requestSimilar(_ s: KSimilar, kind: String) {
         requested.insert(s.id)
         Task {
-            let body: [String: Any] = ["kind": kind, "term": s.title, "profile": profileId]
+            var body: [String: Any] = ["kind": kind, "term": s.title, "profile": profileId]
+            if let pid = await qualityProfileId(kind: kind) { body["profileId"] = pid }
             _ = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body))
             toast = "\(s.title) angefragt ✓"
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""
@@ -371,7 +387,9 @@ final class Cinema: ObservableObject {
     func requestSuggestion(_ s: Suggestion) {
         requested.insert(s.id)
         Task {
-            let body: [String: Any] = ["kind": s.kind == "series" ? "series" : "movie", "term": s.title, "profile": profileId]
+            let k = s.kind == "series" ? "series" : "movie"
+            var body: [String: Any] = ["kind": k, "term": s.title, "profile": profileId]
+            if let pid = await qualityProfileId(kind: k) { body["profileId"] = pid }
             _ = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body))
             toast = "\(s.title) angefragt ✓"
             try? await Task.sleep(nanoseconds: 3_000_000_000); toast = ""

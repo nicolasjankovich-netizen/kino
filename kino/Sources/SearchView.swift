@@ -4,6 +4,7 @@ import SwiftUI
 struct SearchView: View {
     @EnvironmentObject var c: Cinema
     @State private var query = ""
+    @AppStorage("reqQuality") private var reqQuality = "1080p"   // Qualität für neue Anfragen
 
     var body: some View {
         VStack(spacing: 12) {
@@ -13,6 +14,16 @@ struct SearchView: View {
             }.padding(.horizontal, 20).padding(.top, 14)
 
             KindSwitch(kind: $c.kind) { Task { await c.search(query) } }.padding(.horizontal, 18)
+
+            HStack(spacing: 8) {
+                Image(systemName: "4k.tv").foregroundStyle(cInk2.opacity(0.5))
+                Text("Anfrage-Qualität").font(.system(size: 13)).foregroundStyle(cInk2.opacity(0.7))
+                Spacer()
+                Picker("Qualität", selection: $reqQuality) {
+                    Text("1080p").tag("1080p")
+                    Text("4K").tag("4k")
+                }.pickerStyle(.segmented).frame(width: 150)
+            }.padding(.horizontal, 18)
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(cInk2.opacity(0.5))
