@@ -68,18 +68,3 @@ open Kino.xcodeproj
 In `kino/project.yml` das eigene `DEVELOPMENT_TEAM` eintragen. Aufs Gerät kommt die App bei
 mir per Sideload (SideStore) als `.ipa` – dafür reicht ein Debug- oder unsigniertes
 Release-Build, signiert wird beim Installieren.
-
-## Screenshots erzeugen
-
-Im Simulator geht ein Demo-Modus, der ohne Login direkt in die App springt und einen
-Tab vorwählt:
-
-```bash
-SIMCTL_CHILD_KINO_DEMO_TOKEN="<media-token>" \
-SIMCTL_CHILD_KINO_DEMO_TAB=0 \
-xcrun simctl launch booted com.nicolas.Kino
-xcrun simctl io booted screenshot home.png
-```
-
-`KINO_DEMO_TAB` 0–4 = Start · Vorschläge · Bibliothek · Downloads · Anfragen. Die
-Screenshots oben sind genau so entstanden.

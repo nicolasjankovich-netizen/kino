@@ -63,7 +63,7 @@ struct PlayerView: View {
     }
 
     // MARK: – Debug-Overlay (Punkt 6)
-    private let statOrder = ["Auflösung", "Bitrate (Stream)", "Bitrate (Netz)", "Video-Codec", "Audio-Codec", "Puffer", "CPU (App)"]
+    private let statOrder = ["Modus", "Auflösung", "Bitrate (Netz)", "Bitrate (Stream)", "Video-Codec", "Audio-Codec", "Puffer", "CPU (App)"]
 
     private var debugPanel: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -87,6 +87,11 @@ struct PlayerView: View {
     private func updateStats() {
         guard let it = player?.currentItem else { return }
         var s: [String: String] = [:]
+        // Modus = gewählte Qualität. „Gute Qualität" kopiert das Original (verlustfrei) — dabei
+        // deklariert der Stream oft keine feste Bitrate, deshalb ist unten die Netz-Bitrate maßgeblich.
+        let localOnly = dl.localURL(item.uid) != nil
+        s["Modus"] = localOnly ? "Offline (Gerät)"
+                   : (KinoQuality.current == .hoch ? "Original (kopiert)" : "Datensparend (transcode)")
         let sz = it.presentationSize
         if sz.width > 0 { s["Auflösung"] = "\(Int(sz.width))×\(Int(sz.height))" }
         if let ev = it.accessLog()?.events.last {

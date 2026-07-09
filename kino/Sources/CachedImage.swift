@@ -21,6 +21,11 @@ final class ImageCache {
         mem.setObject(img, forKey: url as NSURL)
         return img
     }
+    /// Speicher- und Disk-Cache leeren (Einstellungen → Bild-Cache leeren).
+    func clear() {
+        mem.removeAllObjects()
+        session.configuration.urlCache?.removeAllCachedResponses()
+    }
 }
 
 /// Drop-in-Ersatz für AsyncImage(url:content:placeholder:) — nur eben gecached.

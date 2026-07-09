@@ -98,8 +98,11 @@ struct KinoBackground: View {
             }
         }
     }
+    /// Theme als Property (aus dem globalen appTheme beim Erzeugen) — sonst würde SwiftUI diesen
+    /// eigenschaftslosen View bei einem Theme-Wechsel nicht neu rendern (Apple-TV-Toggle bliebe wirkungslos).
+    var theme: KTheme = appTheme
     var body: some View {
-        switch appTheme {
+        switch theme {
         case .brandy:
             ZStack {
                 Color(red: 1.0, green: 0.99, blue: 0.985)          // heller Grundton
