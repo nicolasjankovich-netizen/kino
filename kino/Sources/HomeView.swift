@@ -271,6 +271,9 @@ struct DetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showPlayer = false
     @State private var details: KDetails?
+    @State private var seasons: [KSeason] = []        // Serien: Staffeln + verfügbare Folgen
+    @State private var selSeason: Int = 0             // gewählte Staffel-Nummer
+    @State private var playingEpisode: KEpisode?      // gewählte Folge → Player
     @AppStorage("kinoQuality") private var quality = "hoch"   // gilt für Abspielen UND Download
 
     var body: some View {
@@ -306,14 +309,14 @@ struct DetailView: View {
 
                         HStack(spacing: 12) {
                             Button { start() } label: {
-                                Label(acc.progress(item.uid) > 0.02 ? "Weiterschauen" : "Abspielen", systemImage: "play.fill")
+                                Label(playLabel, systemImage: "play.fill")
                                     .font(.system(size: 15, weight: .semibold)).foregroundStyle(girlie ? .white : .black)
                                     .frame(maxWidth: .infinity).padding(.vertical, 12)
                                     .background(Capsule().fill(
-                                        item.hasFile == true
+                                        canPlay
                                         ? (girlie ? AnyShapeStyle(LinearGradient(colors: [cPink, cLav], startPoint: .leading, endPoint: .trailing)) : AnyShapeStyle(Color.white))
                                         : AnyShapeStyle(cInk2.opacity(0.3))))
-                            }.buttonStyle(.plain).disabled(item.hasFile != true)
+                            }.buttonStyle(.plain).disabled(!canPlay)
 
                             Button { acc.toggleFav(item.uid) } label: {
                                 Image(systemName: acc.isFav(item.uid) ? "heart.fill" : "heart")
@@ -321,19 +324,21 @@ struct DetailView: View {
                                     .padding(13).glassEffect(.regular, in: .circle)
                             }.buttonStyle(.plain)
 
-                            Button { downloadTapped() } label: {
-                                ZStack {
-                                    if dl.isDownloading(item.uid) {
-                                        Circle().trim(from: 0, to: dl.progress[item.uid] ?? 0)
-                                            .stroke(cGood, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                                            .rotationEffect(.degrees(-90)).frame(width: 26, height: 26)
-                                        Image(systemName: "stop.fill").font(.system(size: 11)).foregroundStyle(cInk)
-                                    } else {
-                                        Image(systemName: dl.isDownloaded(item.uid) ? "checkmark.circle.fill" : "arrow.down.circle")
-                                            .font(.system(size: 18)).foregroundStyle(dl.isDownloaded(item.uid) ? cGood : .white)
-                                    }
-                                }.frame(width: 44, height: 44).glassEffect(.regular, in: .circle)
-                            }.buttonStyle(.plain).disabled(item.hasFile != true)
+                            if item.kind != "series" {   // Downloads gibt es (vorerst) nur für Filme
+                                Button { downloadTapped() } label: {
+                                    ZStack {
+                                        if dl.isDownloading(item.uid) {
+                                            Circle().trim(from: 0, to: dl.progress[item.uid] ?? 0)
+                                                .stroke(cGood, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                                .rotationEffect(.degrees(-90)).frame(width: 26, height: 26)
+                                            Image(systemName: "stop.fill").font(.system(size: 11)).foregroundStyle(cInk)
+                                        } else {
+                                            Image(systemName: dl.isDownloaded(item.uid) ? "checkmark.circle.fill" : "arrow.down.circle")
+                                                .font(.system(size: 18)).foregroundStyle(dl.isDownloaded(item.uid) ? cGood : .white)
+                                        }
+                                    }.frame(width: 44, height: 44).glassEffect(.regular, in: .circle)
+                                }.buttonStyle(.plain).disabled(item.hasFile != true)
+                            }
                         }
 
                         if item.hasFile == true {
@@ -359,6 +364,8 @@ struct DetailView: View {
                             Label("offline auf dem Gerät", systemImage: "checkmark.circle.fill")
                                 .font(.system(size: 12)).foregroundStyle(cGood)
                         }
+
+                        if item.kind == "series" { seasonsSection }
 
                         if let d = details {
                             HStack(spacing: 14) {
@@ -433,8 +440,110 @@ struct DetailView: View {
             }
             .ignoresSafeArea(edges: .top)
         }
-        .task { if details == nil { details = await c.details(for: item) } }
+        .task {
+            if details == nil { details = await c.details(for: item) }
+            if item.kind == "series", seasons.isEmpty {
+                seasons = await c.seasons(for: item)
+                selSeason = seasons.first?.season ?? 0
+            }
+        }
         .fullScreenCover(isPresented: $showPlayer) { PlayerView(item: item) }
+        .fullScreenCover(item: $playingEpisode) { ep in
+            PlayerView(item: item, episodeId: ep.id, episodeName: episodeLabel(ep))
+        }
+    }
+
+    // MARK: – Serien: Staffel-/Folgen-Auswahl
+    private var currentEpisodes: [KEpisode] { seasons.first { $0.season == selSeason }?.episodes ?? [] }
+    /// Zuletzt geschaute, noch nicht beendete Folge (übers Profil-Progress-Log).
+    private var resumeEpisode: KEpisode? {
+        for uid in acc.history() {
+            for se in seasons {
+                if let ep = se.episodes.first(where: { $0.id == uid }) {
+                    let p = acc.progress(uid)
+                    if p > 0.02 && p < 0.95 { return ep }
+                }
+            }
+        }
+        return nil
+    }
+    private var canPlay: Bool { item.kind == "series" ? !seasons.isEmpty : item.hasFile == true }
+    private var playLabel: String {
+        if item.kind == "series" { return resumeEpisode != nil ? "Weiterschauen" : "Abspielen" }
+        return acc.progress(item.uid) > 0.02 ? "Weiterschauen" : "Abspielen"
+    }
+    private func episodeLabel(_ ep: KEpisode) -> String {
+        var s = "S\(selSeason)"
+        if let e = ep.episode { s += "E\(e)" }
+        if let n = ep.name, !n.isEmpty { s += " · \(n)" }
+        return s
+    }
+
+    private var seasonsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Staffeln & Folgen").font(kTitle(18)).kChrome().foregroundStyle(cInk)
+            if seasons.isEmpty {
+                Label("Noch keine Folgen auf dem Server — Staffeln über den Anfragen-Tab laden.",
+                      systemImage: "tray")
+                    .font(.system(size: 12)).foregroundStyle(cInk2.opacity(0.55))
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(seasons) { se in
+                            Button { selSeason = se.season } label: {
+                                Text("Staffel \(se.season)")
+                                    .font(.system(size: 13, weight: selSeason == se.season ? .semibold : .regular))
+                                    .foregroundStyle(selSeason == se.season ? (girlie ? .white : .black) : cInk2.opacity(0.75))
+                                    .padding(.horizontal, 14).padding(.vertical, 7)
+                                    .background(Capsule().fill(selSeason == se.season
+                                        ? AnyShapeStyle(girlie ? AnyShapeStyle(cPink) : AnyShapeStyle(Color.white))
+                                        : AnyShapeStyle(Color.white.opacity(0.1))))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+                VStack(spacing: 8) {
+                    ForEach(currentEpisodes) { ep in
+                        Button { playingEpisode = ep } label: {
+                            HStack(spacing: 12) {
+                                Text(ep.episode.map { String(format: "%02d", $0) } ?? "–")
+                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(cAccent).frame(width: 28)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(ep.name ?? "Folge \(ep.episode ?? 0)")
+                                        .font(.system(size: 14)).foregroundStyle(cInk).lineLimit(1)
+                                    HStack(spacing: 6) {
+                                        if let rt = ep.runtime, rt > 0 {
+                                            Text("\(rt) Min").font(.system(size: 11)).foregroundStyle(cInk2.opacity(0.5))
+                                        }
+                                        let p = acc.progress(ep.id)
+                                        if p > 0.94 {
+                                            Label("gesehen", systemImage: "checkmark").font(.system(size: 11)).foregroundStyle(cGood)
+                                        } else if p > 0.02 {
+                                            Text("\(Int(p * 100)) %").font(.system(size: 11)).foregroundStyle(cAccent)
+                                        }
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "play.circle.fill").font(.system(size: 24)).foregroundStyle(cInk.opacity(0.9))
+                            }
+                            .padding(10)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(.white.opacity(0.06)))
+                            .overlay(alignment: .bottomLeading) {
+                                let p = acc.progress(ep.id)
+                                if p > 0.02 && p < 0.95 {   // dünner Fortschrittsbalken unten
+                                    GeometryReader { geo in
+                                        Capsule().fill(cAccent.opacity(0.9))
+                                            .frame(width: geo.size.width * p, height: 2)
+                                    }.frame(height: 2).padding(.horizontal, 10)
+                                }
+                            }
+                        }.buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(.top, 4)
     }
 
     private func pill(_ s: String) -> some View {
@@ -443,7 +552,19 @@ struct DetailView: View {
             .background(Capsule().fill(.white.opacity(0.1)))
     }
 
-    private func start() { showPlayer = true }
+    private func start() {
+        if item.kind == "series" {
+            // Serie: zuletzt geschaute Folge fortsetzen, sonst erste verfügbare Folge.
+            if let ep = resumeEpisode ?? seasons.first?.episodes.first {
+                if let se = seasons.first(where: { $0.episodes.contains(where: { $0.id == ep.id }) }) {
+                    selSeason = se.season
+                }
+                playingEpisode = ep
+            }
+        } else {
+            showPlayer = true
+        }
+    }
 
     private func downloadTapped() {
         if dl.isDownloaded(item.uid) || dl.isDownloading(item.uid) {

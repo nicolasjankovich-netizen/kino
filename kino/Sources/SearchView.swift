@@ -4,6 +4,7 @@ import SwiftUI
 struct SearchView: View {
     @EnvironmentObject var c: Cinema
     @State private var query = ""
+    @State private var seasonSheet: KResult?                     // Serie → Staffel-Auswahl vor dem Anfragen
     @AppStorage("reqQuality") private var reqQuality = "1080p"   // Qualität für neue Anfragen
 
     var body: some View {
@@ -55,6 +56,10 @@ struct SearchView: View {
             }
         }
         .background(KinoBackground())
+        .sheet(item: $seasonSheet) { r in
+            SeasonRequestSheet(result: r).environmentObject(c)
+                .presentationDetents([.medium, .large])
+        }
         .task {
             await c.loadMyRequests(); await c.pollNotifications()
             while !Task.isCancelled {                        // Status live halten, solange der Tab offen ist
@@ -104,7 +109,10 @@ struct SearchView: View {
                     Text("Dabei").font(.system(size: 9, weight: .medium)).foregroundStyle(cGood)
                 }
             } else {
-                Button { c.request(r) } label: {
+                Button {
+                    if c.kind == .series { seasonSheet = r }   // Serie: erst Staffeln wählen
+                    else { c.request(r) }
+                } label: {
                     VStack(spacing: 2) {
                         Image(systemName: "plus.circle.fill").font(.system(size: 26)).foregroundStyle(cAccent)
                         Text("Anfragen").font(.system(size: 9, weight: .medium)).foregroundStyle(cAccent)
@@ -112,5 +120,110 @@ struct SearchView: View {
                 }.buttonStyle(.plain)
             }
         }.glass(18)
+    }
+}
+
+/// Staffel-Auswahl vor dem Anfragen einer Serie: lädt die Staffel-Liste aus Sonarr
+/// (funktioniert auch, wenn die Serie noch gar nicht auf dem Server ist) und fragt
+/// dann gezielt nur die gewählten Staffeln an.
+struct SeasonRequestSheet: View {
+    let result: KResult
+    @EnvironmentObject var c: Cinema
+    @Environment(\.dismiss) private var dismiss
+    @State private var options: [SeasonOption] = []
+    @State private var selected: Set<Int> = []
+    @State private var loading = true
+    @State private var inLibrary = false
+
+    var body: some View {
+        ZStack {
+            KinoBackground()
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(result.title).font(kTitle(22)).foregroundStyle(cInk).lineLimit(1)
+                        Text(inLibrary ? "Staffeln nachladen" : "Welche Staffeln willst du?")
+                            .font(.system(size: 13)).foregroundStyle(cInk2.opacity(0.6))
+                    }
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 24)).foregroundStyle(cInk2.opacity(0.5))
+                    }.buttonStyle(.plain)
+                }.padding(.top, 18)
+
+                if loading {
+                    HStack { Spacer(); ProgressView().tint(cInk); Spacer() }.padding(.top, 30)
+                } else if options.isEmpty {
+                    Text("Keine Staffel-Infos gefunden — es wird die ganze Serie angefragt.")
+                        .font(.system(size: 13)).foregroundStyle(cInk2.opacity(0.6))
+                } else {
+                    HStack {
+                        Button(selected.count == options.count ? "Keine" : "Alle") {
+                            selected = selected.count == options.count ? [] : Set(options.map(\.season))
+                        }
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(cAccent).buttonStyle(.plain)
+                        Spacer()
+                        Text("\(selected.count) gewählt").font(.system(size: 12)).foregroundStyle(cInk2.opacity(0.5))
+                    }
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
+                            ForEach(options) { o in
+                                let on = selected.contains(o.season)
+                                Button {
+                                    if on { selected.remove(o.season) } else { selected.insert(o.season) }
+                                } label: {
+                                    VStack(spacing: 3) {
+                                        Text("Staffel \(o.season)")
+                                            .font(.system(size: 14, weight: on ? .semibold : .regular))
+                                            .foregroundStyle(on ? (girlie ? .white : .black) : cInk)
+                                        HStack(spacing: 4) {
+                                            if let e = o.episodes { Text("\(e) Folgen").font(.system(size: 10)) }
+                                            if let h = o.have, h > 0 {
+                                                Image(systemName: "checkmark.circle.fill").font(.system(size: 9))
+                                            }
+                                        }
+                                        .foregroundStyle(on ? (girlie ? Color.white.opacity(0.8) : .black.opacity(0.6)) : cInk2.opacity(0.5))
+                                    }
+                                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                    .background(RoundedRectangle(cornerRadius: 12).fill(on
+                                        ? AnyShapeStyle(girlie ? AnyShapeStyle(cPink) : AnyShapeStyle(Color.white))
+                                        : AnyShapeStyle(Color.white.opacity(0.08))))
+                                }.buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+
+                Button {
+                    c.request(result, seasons: options.isEmpty ? nil : Array(selected).sorted())
+                    dismiss()
+                } label: {
+                    Text(requestLabel)
+                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(girlie ? .white : .black)
+                        .frame(maxWidth: .infinity).padding(.vertical, 13)
+                        .background(Capsule().fill(canSend
+                            ? (girlie ? AnyShapeStyle(LinearGradient(colors: [cPink, cLav], startPoint: .leading, endPoint: .trailing)) : AnyShapeStyle(Color.white))
+                            : AnyShapeStyle(cInk2.opacity(0.3))))
+                }.buttonStyle(.plain).disabled(!canSend).padding(.bottom, 16)
+            }
+            .padding(.horizontal, 18)
+        }
+        .task {
+            if let r = await c.seasonOptions(term: result.title, key: result.key) {
+                inLibrary = r.inLibrary
+                options = r.seasons
+                // sinnvolle Vorauswahl: neueste Staffel (bzw. alles, wenn nur wenige)
+                if options.count <= 2 { selected = Set(options.map(\.season)) }
+                else if let last = options.last { selected = [last.season] }
+            }
+            loading = false
+        }
+    }
+
+    private var canSend: Bool { !loading && (options.isEmpty || !selected.isEmpty) }
+    private var requestLabel: String {
+        if options.isEmpty { return "Ganze Serie anfragen" }
+        if selected.count == options.count { return "Alle Staffeln anfragen" }
+        return selected.count == 1 ? "Staffel \(selected.first!) anfragen" : "\(selected.count) Staffeln anfragen"
     }
 }

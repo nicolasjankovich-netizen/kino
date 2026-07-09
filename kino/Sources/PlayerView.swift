@@ -6,6 +6,8 @@ import Darwin
 /// komprimiert), native Controls (Untertitel/Audio-Spuren/Seek/PiP), Resume + Fortschritt speichern.
 struct PlayerView: View {
     let item: KItem
+    var episodeId: String? = nil        // gesetzt = eine konkrete Serien-Folge abspielen
+    var episodeName: String? = nil
     @EnvironmentObject var acc: Accounts
     @EnvironmentObject var c: Cinema
     @EnvironmentObject var dl: Downloads
@@ -17,13 +19,17 @@ struct PlayerView: View {
     @AppStorage("playerDebugOverlay") private var debugOverlay = false   // Punkt 6, per Debug-Screen
     @State private var stats: [String: String] = [:]
 
+    /// Fortschritt pro Folge separat speichern (Serien), sonst pro Titel.
+    private var progressKey: String { episodeId ?? item.uid }
+    private var displayTitle: String { episodeName ?? item.title }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             if let player {
                 VideoSurface(player: player,
-                             startFraction: acc.progress(item.uid),
-                             onProgress: { acc.setProgress(item.uid, $0) })
+                             startFraction: acc.progress(progressKey),
+                             onProgress: { acc.setProgress(progressKey, $0) })
                     .ignoresSafeArea()
                 if debugOverlay {
                     VStack { HStack { debugPanel; Spacer() }; Spacer() }
@@ -38,10 +44,10 @@ struct PlayerView: View {
                         Image(systemName: "chevron.down").font(.system(size: 18, weight: .semibold)).foregroundStyle(.white).padding(14)
                     }; Spacer() }
                     Spacer()
-                    if loading { ProgressView().tint(.white).scaleEffect(1.3); Text(item.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white).padding(.top, 8); Text("Wird geladen …").font(.system(size: 13)).foregroundStyle(.white.opacity(0.55)) }
+                    if loading { ProgressView().tint(.white).scaleEffect(1.3); Text(displayTitle).font(.system(size: 16, weight: .semibold)).foregroundStyle(.white).padding(.top, 8); Text("Wird geladen …").font(.system(size: 13)).foregroundStyle(.white.opacity(0.55)) }
                     if failed {
                         Image(systemName: "exclamationmark.triangle").font(.system(size: 30)).foregroundStyle(cWarn)
-                        Text("Konnte \(item.title) nicht abspielen").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                        Text("Konnte \(displayTitle) nicht abspielen").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
                         Text(errText ?? "Ist der Film in der Bibliothek? Server erreichbar?")
                             .font(.system(size: 12)).foregroundStyle(.white.opacity(0.6))
                             .multilineTextAlignment(.center).padding(.horizontal, 30)
@@ -169,13 +175,15 @@ struct PlayerView: View {
             try? sess.setActive(true)
         }
         let url: URL
-        if let local = dl.localURL(item.uid) {
+        if episodeId == nil, let local = dl.localURL(item.uid) {
             url = local                                   // offline abspielen (heruntergeladen)
-        } else if let streamed = await c.streamURL(for: item) {
+        } else if let eid = episodeId, let streamed = await c.streamURL(episodeId: eid) {
+            url = streamed                                // konkrete Serien-Folge
+        } else if episodeId == nil, let streamed = await c.streamURL(for: item) {
             url = streamed
         } else {
             loading = false; failed = true
-            errText = "Kein Stream gefunden — ist \(item.title) in Jellyfin?"
+            errText = "Kein Stream gefunden — ist \(displayTitle) in Jellyfin?"
             return
         }
         let p = AVPlayer(url: url)

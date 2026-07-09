@@ -217,6 +217,17 @@ struct KRequest: Decodable, Identifiable {  // eigene Anfrage + Live-Status (Bes
         }
     }
 }
+struct KEpisode: Decodable, Identifiable {  // eine Folge (Jellyfin) — fürs Abspielen
+    let id: String; let episode: Int?; let name: String?; let overview: String?; let runtime: Int?
+}
+struct KSeason: Decodable, Identifiable {   // Staffel mit verfügbaren Folgen (Jellyfin)
+    let season: Int; let episodes: [KEpisode]
+    var id: Int { season }
+}
+struct SeasonOption: Decodable, Identifiable {  // Staffel-Info aus Sonarr — fürs Anfragen
+    let season: Int; let monitored: Bool?; let episodes: Int?; let have: Int?
+    var id: Int { season }
+}
 struct Suggestion: Decodable, Identifiable {  // Jellyseerr-Vorschlag (Discover)
     let title: String; let year: Int?; let poster: String?; let overview: String?; let kind: String; let tmdb: Int?
     var id: String { "\(kind)-\(tmdb ?? title.hashValue)" }
@@ -339,10 +350,30 @@ final class Cinema: ObservableObject {
         return want == "4k" ? find(["ultra-hd", "2160", "uhd", "4k"]) : find(["1080"])
     }
 
-    func request(_ item: KResult) {
+    /// Staffeln + verfügbare Folgen einer Serie (Jellyfin) — für den Schau-Screen.
+    func seasons(for item: KItem) async -> [KSeason] {
+        let enc = item.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? item.title
+        struct R: Decodable { let seasons: [KSeason] }
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/seasons?series=\(enc)")),
+              let r = try? JSONDecoder().decode(R.self, from: d) else { return [] }
+        return r.seasons
+    }
+
+    /// Staffel-Liste aus Sonarr — für die Staffel-Auswahl beim Anfragen (geht ohne Server-Dateien).
+    func seasonOptions(term: String, key: Int?) async -> (inLibrary: Bool, seasons: [SeasonOption])? {
+        var q = "term=\(term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? term)"
+        if let k = key { q += "&key=\(k)" }
+        struct R: Decodable { let in_library: Bool; let seasons: [SeasonOption] }
+        guard let (d, _) = try? await URLSession.shared.data(for: req("/api/media/series-seasons?\(q)")),
+              let r = try? JSONDecoder().decode(R.self, from: d) else { return nil }
+        return (r.in_library, r.seasons)
+    }
+
+    func request(_ item: KResult, seasons: [Int]? = nil) {
         Task {
             var body: [String: Any] = ["kind": kind.rawValue, "term": item.title, "profile": profileId]
             if let k = item.key { body["key"] = k }
+            if let se = seasons, !se.isEmpty { body["seasons"] = se }
             if let pid = await qualityProfileId(kind: kind.rawValue) { body["profileId"] = pid }
             struct R: Decodable { let status: String? }
             if let (d, _) = try? await URLSession.shared.data(for: req("/api/media/add", method: "POST", body: body)),
@@ -481,6 +512,17 @@ final class Cinema: ObservableObject {
         }
         _localCache = (ok, Date())
         return ok
+    }
+
+    /// Spielbare HLS-URL für eine konkrete Folge (direkte Jellyfin-Item-ID, ohne Titelsuche).
+    func streamURL(episodeId: String) async -> URL? {
+        let local = await isLocal()
+        let bitrate = KinoQuality.current.streamBitrate
+        struct R: Decodable { let url: String }
+        guard let (d, _) = try? await URLSession.shared.data(
+                for: req("/api/media/stream?id=\(episodeId)&maxbitrate=\(bitrate)&remote=\(local ? 0 : 1)")),
+              let r = try? JSONDecoder().decode(R.self, from: d) else { return nil }
+        return URL(string: r.url)
     }
 
     /// Spielbare HLS-URL holen. Qualität wählt der Nutzer selbst (gute Qualität = Original kopieren,
