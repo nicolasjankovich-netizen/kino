@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.3",
+      "version": "2.4",
       "versionDate": "2026-07-10",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino im Kinekt-Look mit serverseitigem Sofort-Ansehen (TorBox).\n\n2.3: Sofort ansehen streamt jetzt SERVERSEITIG - der Film startet in Sekunden aus dem TorBox-Cache, Jellyfin transkodiert live fuers iPhone (jedes Format). Laeuft parallel als dauerhafte lokale Kopie in die Bibliothek.",
+      "localizedDescription": "Kino im Kinekt-Look mit serverseitigem Sofort-Ansehen (TorBox).\n\n2.4: Sofort ansehen jetzt auch fuer SERIEN - Staffel und Folge waehlen, die Folge startet in Sekunden aus dem TorBox-Cache (Jellyfin transkodiert serverseitig) und wird dauerhaft lokal gespeichert. Filme wie gehabt.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1237916
+      "size": 1265342
     }
   ]
 }
