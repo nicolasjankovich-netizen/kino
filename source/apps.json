@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.0",
+      "version": "2.1",
       "versionDate": "2026-07-10",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino im Kinekt-Look: 2FA-Login mit persoenlichem User-Code, waehlbare Stream-Qualitaet, schnelle Bibliothek und Offline-/Flug-Downloads.\n\nNeu in 2.0 (Netflix-Erlebnis):\n• Serien: Weiterschauen funktioniert jetzt richtig – angefangene Serien landen unter „Weiter ansehen“.\n• Autoplay: am Folgenende startet automatisch die naechste Folge.\n• „Neu hinzugefuegt“-Reihe auf der Startseite.\n• Bibliothek mit Suche, Sortierung und Filter „nur verfuegbare“.\n• Praeziser Anfrage-Status (Seeds/Tempo) und Hinweise jetzt in jedem Tab.\n• Findet zuverlaessiger echte Quellen fuer angefragte Filme/Serien.",
+      "localizedDescription": "Kino im Kinekt-Look mit Sofort-Streaming.\n\nNeu in 2.1:\n- Sofort ansehen in der Suche: Film startet sofort aus dem TorBox-Cache, kein Warten.\n- Wird beim Ansehen automatisch dauerhaft auf den Server geladen und landet in der Bibliothek.\n\nAus 2.0: Serien-Weiterschauen und Autoplay, Neu-hinzugefuegt-Reihe, Bibliothek-Suche und -Filter.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1201765
+      "size": 1225397
     }
   ]
 }
