@@ -7,10 +7,10 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.1",
+      "version": "2.2",
       "versionDate": "2026-07-10",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino im Kinekt-Look mit Sofort-Streaming.\n\nNeu in 2.1:\n- Sofort ansehen in der Suche: Film startet sofort aus dem TorBox-Cache, kein Warten.\n- Wird beim Ansehen automatisch dauerhaft auf den Server geladen und landet in der Bibliothek.\n\nAus 2.0: Serien-Weiterschauen und Autoplay, Neu-hinzugefuegt-Reihe, Bibliothek-Suche und -Filter.",
+      "localizedDescription": "Kino im Kinekt-Look mit Sofort-Ansehen (TorBox).\n\n2.2: Sofort ansehen zuverlaessig - der Film wird schnell aus dem TorBox-Cache auf den Server geladen und ueber Jellyfin abgespielt (transkodiert fuers iPhone, spielt jedes Format). Bleibt danach dauerhaft in der Bibliothek.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
       "size": 1225397
     }
