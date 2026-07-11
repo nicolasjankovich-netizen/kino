@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.4",
-      "versionDate": "2026-07-10",
+      "version": "2.5",
+      "versionDate": "2026-07-11",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino im Kinekt-Look mit serverseitigem Sofort-Ansehen (TorBox).\n\n2.4: Sofort ansehen jetzt auch fuer SERIEN - Staffel und Folge waehlen, die Folge startet in Sekunden aus dem TorBox-Cache (Jellyfin transkodiert serverseitig) und wird dauerhaft lokal gespeichert. Filme wie gehabt.",
+      "localizedDescription": "Kino im Kinekt-Look - jetzt aufgeraeumt.\n\n2.5: Neue Struktur - Tabs Start, Filme/Serien, Bibliothek, Favoriten, Suche. Einheitlicher Detail-Screen: ist der Titel in der Bibliothek gibt es Schauen + Geraete-Download, sonst Schauen ueber den Cache-Server + Zu Bibliothek hinzufuegen. Suche zeigt alles, Antippen oeffnet den Screen. Downloads jetzt oben im Start-Header.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1265342
+      "size": 1256529
     }
   ]
 }
