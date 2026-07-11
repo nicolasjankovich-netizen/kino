@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.7",
+      "version": "2.8",
       "versionDate": "2026-07-11",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino 2.7: Suche gefixt (live beim Tippen ab 2 Zeichen, Enter sofort) + besseres Ranking (exakt/Anfang/enthaelt, neuere zuerst), Filme+Serien gemischt.",
+      "localizedDescription": "Kino 2.8: Qualitaets-Auswahl jetzt echte Aufloesungen (720p/1080p/4K) statt Datensparen. Bibliotheks-Detailscreen repariert (direkter Abspiel-Button). Suche steht ueber den Anfragen; Anfragen-Status nur fuer Debug-Accounts. Wer-schaut-Profilwahl bricht am Rand nicht mehr ab. Download aufs Geraet wartet auf die echte Datei.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1274759
+      "size": 1286820
     }
   ]
 }
