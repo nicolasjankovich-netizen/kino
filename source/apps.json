@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.9",
+      "version": "3.0",
       "versionDate": "2026-07-11",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino 2.9: TorBox-/Nicht-in-Bibliothek-Filmansicht neu und funktional — Handlung, Besetzung und Bewertungen laden jetzt zuverlaessig (mit Wiederholung bei Serverlast), klar beschrifteter Button \"Zur Bibliothek hinzufuegen\", Info direkt unter den Aktionen. Plus alles aus 2.8 (720p/1080p/4K-Aufloesungen, reparierter Bibliotheks-Screen).",
+      "localizedDescription": "Kino 3.0: Bibliotheks-Detailscreen wieder im urspruenglichen Layout (Abspielen + Herz + Download + Aufloesungs-Auswahl). TorBox-Ansicht sauber als 4 Buttons (Schauen / Zur Bibliothek / Favorisieren / Aufs Geraet). Handlung erscheint jetzt SOFORT (aus dem Suchtreffer), Besetzung und Bewertungen laden nach. Behebt \"Infos laden nicht richtig\".",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1298213
+      "size": 1289718
     }
   ]
 }
