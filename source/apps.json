@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "3.1",
+      "version": "3.2",
       "versionDate": "2026-07-11",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino 3.1: Eigener Download-Tab mit Fortschritt. Download aufs Geraet (TorBox) laeuft jetzt im Download-Tab statt Fullscreen — man kann weiter stoebern. \"Zur Bibliothek hinzufuegen\" loest jetzt eine echte Anfrage aus UND laedt die Datei dauerhaft auf den Server. Aufloesungs-Fix: 720p/1080p/4K geben jetzt die echte Aufloesung (vorher spielte alles ~720p).",
+      "localizedDescription": "Kino 3.2: VPN-freier Zugriff von ueberall. Die App erreicht den Server jetzt ueber einen oeffentlichen Cloudflare-Tunnel (Fallback: Tailscale-Funnel) und holt die aktuelle Adresse automatisch — kein VPN noetig, kein .ts.net-DNS-Problem mehr. Behebt \"App laedt nichts\".",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1309455
+      "size": 1313586
     }
   ]
 }
