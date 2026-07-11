@@ -7,12 +7,12 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "2.5",
+      "version": "2.6",
       "versionDate": "2026-07-11",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
-      "localizedDescription": "Kino im Kinekt-Look - jetzt aufgeraeumt.\n\n2.5: Neue Struktur - Tabs Start, Filme/Serien, Bibliothek, Favoriten, Suche. Einheitlicher Detail-Screen: ist der Titel in der Bibliothek gibt es Schauen + Geraete-Download, sonst Schauen ueber den Cache-Server + Zu Bibliothek hinzufuegen. Suche zeigt alles, Antippen oeffnet den Screen. Downloads jetzt oben im Start-Header.",
+      "localizedDescription": "Kino - Apple-Music-Stil.\n\n2.6: Tabs Start/Bibliothek/Favoriten/Suche. Suche live beim Tippen, Filme+Serien gemischt. Detail-Screen adaptiv: in Bibliothek Schauen+Download, sonst 4 Aktionen (Schauen/Bibliothek/Favorit/Aufs Geraet) je mit Qualitaets-Menue. Ratings (IMDb/RT/Metacritic) + Trailer + aehnliche. Neues Profil Stephen.",
       "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
-      "size": 1256529
+      "size": 1271804
     }
   ]
 }
