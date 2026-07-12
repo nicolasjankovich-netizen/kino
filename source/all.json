@@ -1,0 +1,31 @@
+{
+  "name": "Kinetik Apps",
+  "identifier": "com.nicolas.kinetik.source",
+  "subtitle": "Kino, Konzert & Kommando",
+  "apps": [
+    {
+      "name": "Kino", "bundleIdentifier": "com.nicolas.Kino", "developerName": "Kinetik",
+      "version": "3.2", "versionDate": "2026-07-12",
+      "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
+      "localizedDescription": "Mein eigenes Kino: Jellyfin-Bibliothek, VPN-frei ueber Cloudflare-Tunnel.",
+      "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kino/main/kino/Assets.xcassets/AppIcon.appiconset/marketing-1024.png",
+      "size": 1353246
+    },
+    {
+      "name": "Konzert", "bundleIdentifier": "com.nicolas.Konzert", "developerName": "Kinetik",
+      "version": "1.0", "versionDate": "2026-07-12",
+      "downloadURL": "https://github.com/nicolasjankovich-netizen/konzert/raw/main/install/Konzert.ipa",
+      "localizedDescription": "Mein eigenes Spotify: Musik vom Navidrome-Server, Hintergrund-Wiedergabe.",
+      "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/konzert/main/icon.png",
+      "size": 1211999
+    },
+    {
+      "name": "Kommando", "bundleIdentifier": "com.nicolas.NAS", "developerName": "Kinetik",
+      "version": "1.0", "versionDate": "2026-07-12",
+      "downloadURL": "https://github.com/nicolasjankovich-netizen/kommando/raw/main/install/Kommando.ipa",
+      "localizedDescription": "Server-Steuerzentrale: Speicher, Container, VMs, Home Assistant, Minecraft, KI.",
+      "iconURL": "https://raw.githubusercontent.com/nicolasjankovich-netizen/kommando/main/icon.png",
+      "size": 1965269
+    }
+  ]
+}
