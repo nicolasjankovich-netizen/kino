@@ -7,7 +7,7 @@
       "name": "Kino",
       "bundleIdentifier": "com.nicolas.Kino",
       "developerName": "Kinetik",
-      "version": "3.2.1",
+      "version": "3.2.2",
       "versionDate": "2026-07-12",
       "downloadURL": "https://github.com/nicolasjankovich-netizen/kino/raw/main/install/Kino.ipa",
       "localizedDescription": "Kino 3.2: VPN-freier Zugriff von ueberall. Die App erreicht den Server jetzt ueber einen oeffentlichen Cloudflare-Tunnel (Fallback: Tailscale-Funnel) und holt die aktuelle Adresse automatisch — kein VPN noetig, kein .ts.net-DNS-Problem mehr. Behebt \"App laedt nichts\".",
